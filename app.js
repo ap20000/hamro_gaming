@@ -3,6 +3,11 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import cors from 'cors';
+import session from 'express-session';
+
+
+import passport from 'passport';
+import './config/passport.js'; 
 
 //image processing
 
@@ -26,7 +31,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serve uploads folder
-app.use('/images', express.static(path.join(__dirname, '/images')));
+app.use('/images/games', express.static(path.join(__dirname, '/images/games')));
 
 // ======================
 // Security Middlewares
@@ -94,6 +99,21 @@ app.use(cookieParser());
 // ======================
 // Routes
 // ======================
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'mysecretkey',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // use true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  },
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
