@@ -2,6 +2,9 @@ import GamingProduct from '../models/productModel.js';
 import asyncHandler from '../middlewares/asyncHandler.js';
 
 export const addGamingProduct = asyncHandler(async (req, res) => {
+  console.log('Body:', req.body);
+  console.log('File:', req.file);
+
   const {
     name,
     description,
@@ -19,9 +22,10 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   }
 
   let image = '';
-  if (req.file) {
-    image = `/games/${req.file.filename}`; // Serve image from /uploads route
-  }
+    if (req.file) {
+      // Note: URL should match the static route
+      image = `/uploads/games/${req.file.filename}`;
+    }
 
   const product = await GamingProduct.create({
     name,

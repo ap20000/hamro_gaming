@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import cors from 'cors';
 import session from 'express-session';
+import fs from 'fs';
+
 
 
 import passport from 'passport';
@@ -31,7 +33,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serve uploads folder
-app.use('/images/games', express.static(path.join(__dirname, '/images/games')));
+// --- Ensure images/games folder exists ---
+const gamesImagePath = path.join(__dirname, '/uploads/games');
+if (!fs.existsSync(gamesImagePath)) {
+  fs.mkdirSync(gamesImagePath, { recursive: true });
+}
+
+app.use('/uploads/games', express.static(path.join(__dirname, 'uploads')));
 
 // ======================
 // Security Middlewares
