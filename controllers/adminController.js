@@ -120,9 +120,19 @@ export const deleteGamingProduct = asyncHandler(async (req, res) => {
 
 
 export const listUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select('-password'); // exclude passwords
-  res.status(200).json({ success: true, users });
+  try {
+    console.log('🔍 Attempting to fetch users from database...');
+    
+    const users = await User.find().select('-password'); // exclude passwords
+    
+    console.log(`✅ Successfully fetched ${users.length} users`);
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error('❌ Error fetching users:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch users', error: error.message });
+  }
 });
+
 
 
 export const updateUser = asyncHandler(async (req, res) => {

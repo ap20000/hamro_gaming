@@ -25,6 +25,7 @@ import xss from 'xss'; // use `xss` instead of `xss-clean`
 import authRoutes from './routes/authRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -125,6 +126,7 @@ app.use(passport.session());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/product', userRoutes);
 
 
 // ======================

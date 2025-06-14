@@ -1,9 +1,9 @@
 // routes/productRoutes.js
 import express from 'express';
-import { getAllGamingProducts, getGamingProductById } from '../controllers/productController.js';
+import { getAllGamingProducts, getGamingProductById } from '../controllers/userController.js';
 import { addToCart, getCart, removeFromCart } from '../controllers/cartController.js';
 import { placeOrder, getMyOrders } from '../controllers/orderController.js';
-
+import { protect } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 router.get('/products', getAllGamingProducts); // GET /api/products
