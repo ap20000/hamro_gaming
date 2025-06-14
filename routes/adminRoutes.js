@@ -6,7 +6,9 @@ import {
     deleteGamingProduct,
     listUsers, 
     updateUser,
-     deleteUser
+     deleteUser,
+     getTotalUserCount,
+     getTotalGameCount
   } from '../controllers/adminController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { adminOnly } from '../middlewares/adminMiddleware.js';
@@ -15,11 +17,13 @@ import upload from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
+router.get('/total-users', protect, adminOnly, getTotalUserCount);
 
 router.get('/users', protect, adminOnly, listUsers);
 router.put('/user/:id', protect, adminOnly, updateUser);
 router.delete('/user/:id', protect, adminOnly, deleteUser);
 
+router.get('/total-games', protect, adminOnly, getTotalGameCount);
 router.post('/addgame', protect, adminOnly, upload.single('image'), addGamingProduct);
 router.get('/games', protect, adminOnly, listGamingProducts);
 router.put('/game/:id', protect, adminOnly, upload.single('image'), updateGamingProduct);

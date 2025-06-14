@@ -1,6 +1,21 @@
 import GamingProduct from '../models/productModel.js';
 import asyncHandler from '../middlewares/asyncHandler.js';
 
+import User from '../models/userModel.js';
+// import your User model
+
+
+export const getTotalUserCount = asyncHandler(async (req, res) => {
+  const userCount = await User.countDocuments();
+  res.status(200).json({ success: true, totalUsers: userCount });
+});
+
+// Total Games count
+export const getTotalGameCount = asyncHandler(async (req, res) => {
+  const gameCount = await GamingProduct.countDocuments();
+  res.status(200).json({ success: true, totalGames: gameCount });
+});
+
 export const addGamingProduct = asyncHandler(async (req, res) => {
   console.log('Body:', req.body);
   console.log('File:', req.file);

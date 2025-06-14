@@ -59,12 +59,14 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
   await user.save();
 
   generateToken(res, user._id);
+
   res.status(200).json({
     success: true,
     message: 'Email verified successfully',
     user: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });
+
 
 
 export const loginUser = asyncHandler(async (req, res) => {
