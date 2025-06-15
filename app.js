@@ -96,12 +96,22 @@ app.use(limiter);
 // General Middlewares
 // ======================
 
+const allowedOrigins = [
+  'https://hamro-gaming.onrender.com',
+  'http://localhost:3000',
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    callback(null, true); // Allow all origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
 }));
+
 
 app.use(morgan('dev'));
 app.use(express.json());
