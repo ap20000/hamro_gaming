@@ -58,7 +58,8 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
   user.otpExpiry = undefined;
   await user.save();
 
-  generateToken(res, user._id);
+  generateToken(res, user._id, user.role);
+
 
   res.status(200).json({
     success: true,
@@ -90,7 +91,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Please verify your email before logging in');
   }
 
-  generateToken(res, user._id);
+  generateToken(res, user._id, user.role);
+
 
   res.json({
     success: true,

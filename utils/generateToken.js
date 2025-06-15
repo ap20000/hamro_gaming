@@ -11,6 +11,13 @@ const generateToken = (res, userId) => {
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+
+  res.cookie('role', role, {
+    httpOnly: true,  // Prevent JS access
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
 };
 
 export default generateToken;
