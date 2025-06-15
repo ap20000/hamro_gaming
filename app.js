@@ -97,7 +97,9 @@ app.use(limiter);
 // ======================
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    callback(null, true); // Allow all origins
+  },
   credentials: true,
 }));
 
