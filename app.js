@@ -6,7 +6,7 @@ import cors from 'cors';
 import session from 'express-session';
 import fs from 'fs';
 
-
+import MongoStore  from 'mongoose';
 
 import passport from 'passport';
 import './config/passport.js'; 
@@ -127,10 +127,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecretkey',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    collectionName: 'sessions',
-  }),
+  // store: MongoStore.create({
+  //   mongoUrl: process.env.MONGO_URI,
+  //   collectionName: 'sessions',
+  // }),
   cookie: {
     secure: process.env.NODE_ENV === 'production', // true on HTTPS
     httpOnly: true,
