@@ -1,22 +1,22 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const generateToken = (res, userId, role) => {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
+    expiresIn: "7d",
   });
 
-  res.cookie('jwt', token, {
+  res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',// Fix: Change 'strict' to 'lax' or 'none'
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: false, // ✅ works over HTTP during development
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.cookie('role', role, {
+  res.cookie("role", role, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none', // Fix: Change 'strict' to 'lax' or 'none'
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    secure: false, // ✅ works over HTTP during development
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
