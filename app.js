@@ -98,7 +98,7 @@ app.use(limiter);
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://hamro-gaming.onrender.com',
+  'https://hamro-gaming.onrender.com/api',
 ];
 
 app.use(cors({
