@@ -97,20 +97,22 @@ app.use(limiter);
 // ======================
 
 const allowedOrigins = [
-  'https://hamro-gaming.onrender.com',
   'http://localhost:3000',
+  'https://hamro-gaming.onrender.com',
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
 }));
+
 
 
 app.use(morgan('dev'));
@@ -125,9 +127,14 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecretkey',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions',
+  }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // use true in production with HTTPS
+    secure: process.env.NODE_ENV === 'production', // true on HTTPS
     httpOnly: true,
+    sameSite: 'none', // allow cookies in cross-origin requests
     maxAge: 24 * 60 * 60 * 1000, // 1 day
   },
 }));
