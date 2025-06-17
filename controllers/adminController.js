@@ -1,9 +1,8 @@
-import GamingProduct from '../models/productModel.js';
-import asyncHandler from '../middlewares/asyncHandler.js';
+import GamingProduct from "../models/productModel.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
-import User from '../models/userModel.js';
+import User from "../models/userModel.js";
 // import your User model
-
 
 export const getTotalUserCount = asyncHandler(async (req, res) => {
   const userCount = await User.countDocuments();
@@ -17,8 +16,8 @@ export const getTotalGameCount = asyncHandler(async (req, res) => {
 });
 
 export const addGamingProduct = asyncHandler(async (req, res) => {
-  console.log('Body:', req.body);
-  console.log('File:', req.file);
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
 
   const {
     name,
@@ -31,16 +30,24 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     status,
   } = req.body;
 
-  if (!name || !description || !price || !deliveryTime || !platform || !region || !gameType) {
+  if (
+    !name ||
+    !description ||
+    !price ||
+    !deliveryTime ||
+    !platform ||
+    !region ||
+    !gameType
+  ) {
     res.status(400);
-    throw new Error('Please provide all required fields');
+    throw new Error("Please provide all required fields");
   }
 
-  let image = '';
-    if (req.file) {
-      // Note: URL should match the static route
-      image = `/uploads/games/${req.file.filename}`;
-    }
+  let image = "";
+  if (req.file) {
+    // Note: URL should match the static route
+    image = `/uploads/games/${req.file.filename}`;
+  }
 
   const product = await GamingProduct.create({
     name,
@@ -61,19 +68,20 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const listGamingProducts = asyncHandler(async (req, res) => {
-  const products = await GamingProduct.find().populate('createdBy', 'name email');
+  const products = await GamingProduct.find().populate(
+    "createdBy",
+    "name email"
+  );
   res.status(200).json({ success: true, products });
 });
-
 
 export const updateGamingProduct = asyncHandler(async (req, res) => {
   const product = await GamingProduct.findById(req.params.id);
 
   if (!product) {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error("Product not found");
   }
 
   const {
@@ -95,52 +103,54 @@ export const updateGamingProduct = asyncHandler(async (req, res) => {
   product.region = region || product.region;
   product.gameType = gameType || product.gameType;
   product.status = status || product.status;
-
   if (req.file) {
-    product.image = `/uploads/${req.file.filename}`;
+    product.image = `/uploads/games/${req.file.filename}`; // Add /games/ to match add endpoint
   }
 
   const updatedProduct = await product.save();
   res.status(200).json({ success: true, product: updatedProduct });
 });
 
-
 export const deleteGamingProduct = asyncHandler(async (req, res) => {
   const product = await GamingProduct.findById(req.params.id);
 
   if (!product) {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error("Product not found");
   }
 
   await product.remove();
-  res.status(200).json({ success: true, message: 'Product deleted successfully' });
+  res
+    .status(200)
+    .json({ success: true, message: "Product deleted successfully" });
 });
-
-
 
 export const listUsers = asyncHandler(async (req, res) => {
   try {
-    console.log('🔍 Attempting to fetch users from database...');
-    
-    const users = await User.find().select('-password'); // exclude passwords
-    
+    console.log("🔍 Attempting to fetch users from database...");
+
+    const users = await User.find().select("-password"); // exclude passwords
+
     console.log(`✅ Successfully fetched ${users.length} users`);
     res.status(200).json({ success: true, users });
   } catch (error) {
-    console.error('❌ Error fetching users:', error.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch users', error: error.message });
+    console.error("❌ Error fetching users:", error.message);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to fetch users",
+        error: error.message,
+      });
   }
 });
-
-
 
 export const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   const { name, email, role, password } = req.body;
@@ -165,16 +175,15 @@ export const updateUser = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   await User.findByIdAndDelete(req.params.id);
 
-  res.status(200).json({ success: true, message: 'User deleted successfully' });
+  res.status(200).json({ success: true, message: "User deleted successfully" });
 });
