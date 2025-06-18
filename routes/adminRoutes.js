@@ -8,7 +8,9 @@ import {
     updateUser,
      deleteUser,
      getTotalUserCount,
-     getTotalGameCount
+     getTotalGameCount,
+     getOrderSummaryByProductType,
+     getTotalSalesAmount
   } from '../controllers/adminController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { adminOnly } from '../middlewares/adminMiddleware.js';
@@ -28,5 +30,11 @@ router.post('/addgame', protect, adminOnly, upload.single('image'), addGamingPro
 router.get('/games', protect, adminOnly, listGamingProducts);
 router.put('/game/:id', protect, adminOnly, upload.single('image'), updateGamingProduct);
 router.delete('/game/:id', protect, adminOnly, deleteGamingProduct);
+
+router.get('/order-summary', protect, adminOnly, getOrderSummaryByProductType);
+router.get('/total-sales', protect, adminOnly, getTotalSalesAmount);
+
+
+
 
 export default router;

@@ -2,6 +2,7 @@ import GamingProduct from "../models/productModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 
 import User from "../models/userModel.js";
+import Order from "../models/orderModel.js";
 // import your User model
 
 export const getTotalUserCount = asyncHandler(async (req, res) => {
@@ -27,9 +28,15 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     platform,
     region,
     gameType,
+    productType,
     status,
+    itemType,
+    topupOptions,
+    keys,
+    expirationDate,
   } = req.body;
 
+  // ✅ Validate required fields
   if (
     !name ||
     !description ||
@@ -37,7 +44,8 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     !deliveryTime ||
     !platform ||
     !region ||
-    !gameType
+    !gameType ||
+    !productType
   ) {
     res.status(400);
     throw new Error("Please provide all required fields");
@@ -49,7 +57,8 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     image = `/uploads/games/${req.file.filename}`;
   }
 
-  const product = await GamingProduct.create({
+  // ✅ Create base product data
+  const productData = {
     name,
     description,
     price,
@@ -58,9 +67,36 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     platform,
     region,
     gameType,
+    productType,
     status,
     createdBy: req.user._id,
-  });
+  };
+
+  // 🔁 TOP-UP product logic (e.g., PUBG UC, Free Fire Diamonds)
+  if (productType === "topup") {
+    if (itemType) productData.itemType = itemType;
+
+    if (topupOptions && Array.isArray(topupOptions)) {
+      productData.topupOptions = topupOptions.map((option) => ({
+        label: option.label,
+        amount: option.amount,
+        price: option.price,
+      }));
+    }
+  }
+
+  // 💳 Giftcard or CD Key logic
+  if (productType === "giftcard" || productType === "cdkey") {
+    productData.keys = keys
+      ? typeof keys === "string"
+        ? keys.split(",").map((k) => k.trim())
+        : keys
+      : [];
+    if (expirationDate) productData.expirationDate = expirationDate;
+  }
+
+  // ✅ Create the product
+  const product = await GamingProduct.create(productData);
 
   res.status(201).json({
     success: true,
@@ -104,7 +140,7 @@ export const updateGamingProduct = asyncHandler(async (req, res) => {
   product.gameType = gameType || product.gameType;
   product.status = status || product.status;
   if (req.file) {
-    product.image = `/uploads/games/${req.file.filename}`; // Add /games/ to match add endpoint
+    product.image = `/uploads/games/${req.file.filename}`;
   }
 
   const updatedProduct = await product.save();
@@ -119,7 +155,7 @@ export const deleteGamingProduct = asyncHandler(async (req, res) => {
     throw new Error("Product not found");
   }
 
-  await product.remove();
+  await GamingProduct.findByIdAndDelete(req.params.id);
   res
     .status(200)
     .json({ success: true, message: "Product deleted successfully" });
@@ -135,13 +171,11 @@ export const listUsers = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, users });
   } catch (error) {
     console.error("❌ Error fetching users:", error.message);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch users",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.message,
+    });
   }
 });
 
@@ -186,4 +220,59 @@ export const deleteUser = asyncHandler(async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
 
   res.status(200).json({ success: true, message: "User deleted successfully" });
+});
+
+export const getOrderSummaryByProductType = asyncHandler(async (req, res) => {
+  const summary = await Order.aggregate([
+    {
+      $unwind: "$products",
+    },
+    {
+      $lookup: {
+        from: "gamingproducts",
+        localField: "products",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    { $unwind: "$productDetails" },
+    {
+      $group: {
+        _id: "$productDetails.productType",
+        totalOrders: { $sum: 1 },
+        totalAmount: { $sum: "$totalAmount" },
+      },
+    },
+    {
+      $project: {
+        productType: "$_id",
+        totalOrders: 1,
+        totalAmount: 1,
+        _id: 0,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    summary,
+  });
+});
+
+export const getTotalSalesAmount = asyncHandler(async (req, res) => {
+  const result = await Order.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalSales: { $sum: "$totalAmount" },
+      },
+    },
+  ]);
+
+  const totalSales = result[0]?.totalSales || 0;
+
+  res.status(200).json({
+    success: true,
+    totalSales,
+  });
 });
