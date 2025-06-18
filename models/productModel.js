@@ -15,9 +15,7 @@ const ProductSchema = new mongoose.Schema(
 
     // Topup Specific
     itemType: { type: String }, // e.g., UC, Diamond
-    userId: { type: String },
-    uid: { type: String },
-    password: { type: String },
+    
     topupOptions: [
       {
         label: { type: String }, // e.g., '300 UC'

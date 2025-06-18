@@ -28,25 +28,25 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     gameType,
     productType,
     status,
-    userId,
-    uid,
-    password,
     itemType,
     topupOptions,
     keys,
     expirationDate,
   } = req.body;
 
+  // ✅ Validate required fields
   if (!name || !description || !price || !deliveryTime || !platform || !region || !gameType || !productType) {
     res.status(400);
     throw new Error('Please provide all required fields');
   }
 
+  // ✅ Handle image upload
   let image = '';
   if (req.file) {
     image = `/uploads/games/${req.file.filename}`;
   }
 
+  // ✅ Create base product data
   const productData = {
     name,
     description,
@@ -61,11 +61,8 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   };
 
-  // 🔁 TOP-UP product logic
+  // 🔁 TOP-UP product logic (e.g., PUBG UC, Free Fire Diamonds)
   if (productType === 'topup') {
-    if (userId) productData.userId = userId;
-    if (uid) productData.uid = uid;
-    if (password) productData.password = password;
     if (itemType) productData.itemType = itemType;
 
     if (topupOptions && Array.isArray(topupOptions)) {
@@ -87,6 +84,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     if (expirationDate) productData.expirationDate = expirationDate;
   }
 
+  // ✅ Create the product
   const product = await GamingProduct.create(productData);
 
   res.status(201).json({
@@ -94,6 +92,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     product,
   });
 });
+
 
 export const listGamingProducts = asyncHandler(async (req, res) => {
   const products = await GamingProduct.find().populate('createdBy', 'name email');
