@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema(
     required: function() {
       return !this.fromGoogle;  // password required only if not from Google
     },
+    wallet: {
+      type: Number,
+      default: 0,
+    },
   },
     role: {
       type: String,
