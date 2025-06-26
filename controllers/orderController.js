@@ -25,6 +25,11 @@ export const placeOrder = asyncHandler(async (req, res) => {
   const isGiftcardOrCDKey = productTypes.some(type => ['giftcard', 'cdkey'].includes(type));
   const isTopup = productTypes.some(type => type === 'topup');
 
+  const isAccount = productTypes.includes('account');
+
+  // 2. Determine order status
+  const needsVerification = isGiftcardOrCDKey || isAccount;
+
   // Create order with appropriate status
   const order = await Order.create({
     user: req.user._id,
@@ -39,12 +44,12 @@ export const placeOrder = asyncHandler(async (req, res) => {
   });
 
   // Send admin email
-  if (isGiftcardOrCDKey) {
+  if (isGiftcardOrCDKey || isAccount) {
     await sendEmail({
       to: process.env.ADMIN_EMAIL,
-      subject: '🔐 Giftcard/CDKey Order Verification Required',
+      subject: isAccount ? '👤 Account Order Verification Required' : '🔐 Giftcard/CDKey Order Verification Required',
       text: `
-        A new GIFT CARD / CDKEY order is placed.
+        A new ${isAccount ? 'ACCOUNT' : 'GIFT CARD / CDKEY'} order has been placed.
 
         Order ID: ${order._id}
         User ID: ${req.user._id}

@@ -32,6 +32,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     topupOptions,
     keys,
     expirationDate,
+    accounts
   } = req.body;
 
   // ✅ Validate required fields
@@ -82,6 +83,20 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
         : keys
       : [];
     if (expirationDate) productData.expirationDate = expirationDate;
+  }
+
+  if (productType === 'account') {
+    if (accounts && Array.isArray(accounts)) {
+      productData.accounts = accounts.map((acc) => ({
+        email: acc.email,
+        password: acc.password,
+        code: acc.code || null,
+        used: false,
+      }));
+    }else {
+      res.status(400);
+      throw new Error('Account credentials must be provided as an array');
+    }
   }
 
   // ✅ Create the product
@@ -276,44 +291,72 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
   if (!order) throw new Error('Order not found');
 
-  // Ensure productType is giftcard or cdkey
-  const productTypes = order.products.map(p => p.productType);
-  const hasNonVerifiableProduct = productTypes.some(
-    type => type !== 'giftcard' && type !== 'cdkey'
-  );
-  if (hasNonVerifiableProduct) {
-    res.status(400);
-    throw new Error('Only giftcard and cdkey orders can be verified by admin.');
-  }
+  const deliveredData = [];
 
-  // Pull keys from each product
-  const deliveredKeys = [];
   for (const product of order.products) {
     const dbProduct = await GamingProduct.findById(product._id);
 
-    if (!dbProduct || !dbProduct.keys || dbProduct.keys.length === 0) {
-      throw new Error(`Product "${product.name}" is out of stock.`);
+    if (!dbProduct) {
+      throw new Error(`Product "${product.name}" not found.`);
     }
 
-    // Remove 1 key from product and assign to order
-    const assignedKey = dbProduct.keys.shift(); // remove first key
-    deliveredKeys.push(assignedKey);
+    // 🎁 Giftcard/CDKey logic
+    if (product.productType === 'giftcard' || product.productType === 'cdkey') {
+      if (!dbProduct.keys || dbProduct.keys.length === 0) {
+        throw new Error(`Product "${product.name}" is out of stock.`);
+      }
 
-    await dbProduct.save();
+      const assignedKey = dbProduct.keys.shift(); // remove first key
+      deliveredData.push({
+        name: product.name,
+        type: product.productType,
+        value: assignedKey
+      });
+
+      await dbProduct.save();
+    }
+
+    // 👤 Account logic
+    else if (product.productType === 'account') {
+      const availableAccount = dbProduct.accounts.find(acc => !acc.used);
+
+      if (!availableAccount) {
+        throw new Error(`No available accounts for "${product.name}".`);
+      }
+
+      availableAccount.used = true;
+
+      deliveredData.push({
+        name: product.name,
+        type: 'account',
+        value: {
+          email: availableAccount.email,
+          password: availableAccount.password,
+          code: availableAccount.code || null,
+          loginInstructions: dbProduct.loginInstructions || 'Login with the provided credentials.'
+        }
+      });
+
+      await dbProduct.save();
+    }
   }
 
-  order.deliveredKeys = deliveredKeys;
+  order.deliveredKeys = deliveredData;
   order.status = 'completed';
   await order.save();
 
-  // Send confirmation email
+  // Send confirmation email to user
   await sendEmail({
     to: order.user.email,
-    subject: '🎁 Giftcard/CD Key Delivered',
-    text: `Your order ${order._id} has been verified and your code(s) are ready in your dashboard.`,
+    subject: '✅ Your Order is Completed',
+    text: `Your order #${order._id} has been verified. Please check your dashboard or live chat for access details.`
   });
 
-  res.status(200).json({ success: true, message: 'Giftcard/CDKey order verified and keys delivered' });
+  res.status(200).json({
+    success: true,
+    message: 'Order verified and content delivered',
+    delivered: deliveredData
+  });
 });
 
 
