@@ -10,7 +10,9 @@ import {
      getTotalUserCount,
      getTotalGameCount,
      getOrderSummaryByProductType,
-     getTotalSalesAmount
+     getTotalSalesAmount,
+     verifyOrder,
+     getAllOrdersWithProducts
   } from '../controllers/adminController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { adminOnly } from '../middlewares/adminMiddleware.js';
@@ -33,6 +35,8 @@ router.delete('/game/:id', protect, adminOnly, deleteGamingProduct);
 
 router.get('/order-summary', protect, adminOnly, getOrderSummaryByProductType);
 router.get('/total-sales', protect, adminOnly, getTotalSalesAmount);
+router.put('/verify-order/:id', protect, adminOnly, verifyOrder);
+router.get('/orders', protect, adminOnly, getAllOrdersWithProducts);
 
 
 

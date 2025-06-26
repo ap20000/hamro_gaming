@@ -10,6 +10,7 @@ import MongoStore  from 'mongoose';
 
 import passport from 'passport';
 import './config/passport.js'; 
+import paymentRoutes from './routes/paymentRoutes.js';
 
 //image processing
 
@@ -41,6 +42,14 @@ if (!fs.existsSync(gamesImagePath)) {
 }
 
 app.use('/uploads/games', express.static(path.join(__dirname, 'uploads')));
+
+const paymentQRPath = path.join(__dirname, '/uploads/payment');
+if (!fs.existsSync(paymentQRPath)) {
+  fs.mkdirSync(paymentQRPath, { recursive: true });
+}
+
+// Serve QR images via public route
+app.use('/uploads/payment', express.static(paymentQRPath));
 
 // ======================
 // Security Middlewares
@@ -146,6 +155,8 @@ app.use(passport.session());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/product', userRoutes);
+app.use('/api/payment', paymentRoutes);
+
 
 
 // ======================
