@@ -28,9 +28,9 @@ router.get("/cart", protect, getCart);
 router.delete("/cart/:productId", protect, removeFromCart);
 
 // Order Routes
-router.post("/orders", placeOrder);
-router.get("/orders/my", getMyOrders);
-router.get("/orders/my/:id", getOrderById);
-router.post("/orders/:id/claim", claimGiftcardKey);
+router.post("/orders", protect, placeOrder);
+router.get("/orders/my", protect, getMyOrders);
+router.get("/orders/my/:id", protect, getOrderById);
+router.post("/orders/:id/claim", protect, claimGiftcardKey);
 
 export default router;
