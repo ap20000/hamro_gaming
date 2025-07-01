@@ -6,7 +6,6 @@ import User from '../models/userModel.js';
 import Order from '../models/orderModel.js';
 // import your User model
 
-
 export const getTotalUserCount = asyncHandler(async (req, res) => {
   const userCount = await User.countDocuments();
   res.status(200).json({ success: true, totalUsers: userCount });
@@ -19,6 +18,9 @@ export const getTotalGameCount = asyncHandler(async (req, res) => {
 });
 
 export const addGamingProduct = asyncHandler(async (req, res) => {
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
+
   const {
     name,
     description,
@@ -33,18 +35,27 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     topupOptions,
     keys,
     expirationDate,
-    accounts
+    accounts,
   } = req.body;
 
   // ✅ Validate required fields
-  if (!name || !description || !price || !deliveryTime || !platform || !region || !gameType || !productType) {
+  if (
+    !name ||
+    !description ||
+    !price ||
+    !deliveryTime ||
+    !platform ||
+    !region ||
+    !gameType ||
+    !productType
+  ) {
     res.status(400);
-    throw new Error('Please provide all required fields');
+    throw new Error("Please provide all required fields");
   }
 
-  // ✅ Handle image upload
-  let image = '';
+  let image = "";
   if (req.file) {
+    // Note: URL should match the static route
     image = `/uploads/games/${req.file.filename}`;
   }
 
@@ -64,7 +75,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   };
 
   // 🔁 TOP-UP product logic (e.g., PUBG UC, Free Fire Diamonds)
-  if (productType === 'topup') {
+  if (productType === "topup") {
     if (itemType) productData.itemType = itemType;
 
     if (topupOptions && Array.isArray(topupOptions)) {
@@ -77,16 +88,16 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   }
 
   // 💳 Giftcard or CD Key logic
-  if (productType === 'giftcard' || productType === 'cdkey') {
+  if (productType === "giftcard" || productType === "cdkey") {
     productData.keys = keys
-      ? typeof keys === 'string'
-        ? keys.split(',').map((k) => k.trim())
+      ? typeof keys === "string"
+        ? keys.split(",").map((k) => k.trim())
         : keys
       : [];
     if (expirationDate) productData.expirationDate = expirationDate;
   }
 
-  if (productType === 'account') {
+  if (productType === "account") {
     if (accounts && Array.isArray(accounts)) {
       productData.accounts = accounts.map((acc) => ({
         email: acc.email,
@@ -94,9 +105,9 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
         code: acc.code || null,
         used: false,
       }));
-    }else {
+    } else {
       res.status(400);
-      throw new Error('Account credentials must be provided as an array');
+      throw new Error("Account credentials must be provided as an array");
     }
   }
 
@@ -109,19 +120,20 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const listGamingProducts = asyncHandler(async (req, res) => {
-  const products = await GamingProduct.find().populate('createdBy', 'name email');
+  const products = await GamingProduct.find().populate(
+    "createdBy",
+    "name email"
+  );
   res.status(200).json({ success: true, products });
 });
-
 
 export const updateGamingProduct = asyncHandler(async (req, res) => {
   const product = await GamingProduct.findById(req.params.id);
 
   if (!product) {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error("Product not found");
   }
 
   const {
@@ -143,7 +155,6 @@ export const updateGamingProduct = asyncHandler(async (req, res) => {
   product.region = region || product.region;
   product.gameType = gameType || product.gameType;
   product.status = status || product.status;
-
   if (req.file) {
     product.image = `/uploads/games/${req.file.filename}`;
   }
@@ -152,44 +163,44 @@ export const updateGamingProduct = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, product: updatedProduct });
 });
 
-
 export const deleteGamingProduct = asyncHandler(async (req, res) => {
   const product = await GamingProduct.findById(req.params.id);
 
   if (!product) {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error("Product not found");
   }
 
- 
   await GamingProduct.findByIdAndDelete(req.params.id);
-  res.status(200).json({ success: true, message: 'Product deleted successfully' });
+  res
+    .status(200)
+    .json({ success: true, message: "Product deleted successfully" });
 });
-
-
 
 export const listUsers = asyncHandler(async (req, res) => {
   try {
-    console.log('🔍 Attempting to fetch users from database...');
-    
-    const users = await User.find().select('-password'); // exclude passwords
-    
+    console.log("🔍 Attempting to fetch users from database...");
+
+    const users = await User.find().select("-password"); // exclude passwords
+
     console.log(`✅ Successfully fetched ${users.length} users`);
     res.status(200).json({ success: true, users });
   } catch (error) {
-    console.error('❌ Error fetching users:', error.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch users', error: error.message });
+    console.error("❌ Error fetching users:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+      error: error.message,
+    });
   }
 });
-
-
 
 export const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   const { name, email, role, password } = req.body;
@@ -214,49 +225,48 @@ export const updateUser = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   await User.findByIdAndDelete(req.params.id);
 
-  res.status(200).json({ success: true, message: 'User deleted successfully' });
+  res.status(200).json({ success: true, message: "User deleted successfully" });
 });
 
 export const getOrderSummaryByProductType = asyncHandler(async (req, res) => {
   const summary = await Order.aggregate([
     {
-      $unwind: '$products'
+      $unwind: "$products",
     },
     {
       $lookup: {
-        from: 'gamingproducts',
-        localField: 'products',
-        foreignField: '_id',
-        as: 'productDetails'
-      }
+        from: "gamingproducts",
+        localField: "products",
+        foreignField: "_id",
+        as: "productDetails",
+      },
     },
-    { $unwind: '$productDetails' },
+    { $unwind: "$productDetails" },
     {
       $group: {
-        _id: '$productDetails.productType',
+        _id: "$productDetails.productType",
         totalOrders: { $sum: 1 },
-        totalAmount: { $sum: '$totalAmount' }
-      }
+        totalAmount: { $sum: "$totalAmount" },
+      },
     },
     {
       $project: {
-        productType: '$_id',
+        productType: "$_id",
         totalOrders: 1,
         totalAmount: 1,
-        _id: 0
-      }
-    }
+        _id: 0,
+      },
+    },
   ]);
 
   res.status(200).json({
@@ -270,9 +280,9 @@ export const getTotalSalesAmount = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalSales: { $sum: "$totalAmount" }
-      }
-    }
+        totalSales: { $sum: "$totalAmount" },
+      },
+    },
   ]);
 
   const totalSales = result[0]?.totalSales || 0;
@@ -283,14 +293,13 @@ export const getTotalSalesAmount = asyncHandler(async (req, res) => {
   });
 });
 
-
 // PUT /api/admin/verify-order/:id
 export const verifyOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
-    .populate('products')
-    .populate('user', 'email');
+    .populate("products")
+    .populate("user", "email");
 
-  if (!order) throw new Error('Order not found');
+  if (!order) throw new Error("Order not found");
 
   const deliveredData = [];
 
@@ -302,7 +311,7 @@ export const verifyOrder = asyncHandler(async (req, res) => {
     }
 
     // 🎁 Giftcard/CDKey logic
-    if (product.productType === 'giftcard' || product.productType === 'cdkey') {
+    if (product.productType === "giftcard" || product.productType === "cdkey") {
       if (!dbProduct.keys || dbProduct.keys.length === 0) {
         throw new Error(`Product "${product.name}" is out of stock.`);
       }
@@ -311,15 +320,15 @@ export const verifyOrder = asyncHandler(async (req, res) => {
       deliveredData.push({
         name: product.name,
         type: product.productType,
-        value: assignedKey
+        value: assignedKey,
       });
 
       await dbProduct.save();
     }
 
     // 👤 Account logic
-    else if (product.productType === 'account') {
-      const availableAccount = dbProduct.accounts.find(acc => !acc.used);
+    else if (product.productType === "account") {
+      const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
 
       if (!availableAccount) {
         throw new Error(`No available accounts for "${product.name}".`);
@@ -329,13 +338,15 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
       deliveredData.push({
         name: product.name,
-        type: 'account',
+        type: "account",
         value: {
           email: availableAccount.email,
           password: availableAccount.password,
           code: availableAccount.code || null,
-          loginInstructions: dbProduct.loginInstructions || 'Login with the provided credentials.'
-        }
+          loginInstructions:
+            dbProduct.loginInstructions ||
+            "Login with the provided credentials.",
+        },
       });
 
       await dbProduct.save();
@@ -343,30 +354,29 @@ export const verifyOrder = asyncHandler(async (req, res) => {
   }
 
   order.deliveredKeys = deliveredData;
-  order.status = 'completed';
+  order.status = "completed";
   await order.save();
 
   // Send confirmation email to user
   await sendEmail({
     to: order.user.email,
-    subject: '✅ Your Order is Completed',
-    text: `Your order #${order._id} has been verified. Please check your dashboard or live chat for access details.`
+    subject: "✅ Your Order is Completed",
+    text: `Your order #${order._id} has been verified. Please check your dashboard or live chat for access details.`,
   });
 
   res.status(200).json({
     success: true,
-    message: 'Order verified and content delivered',
-    delivered: deliveredData
+    message: "Order verified and content delivered",
+    delivered: deliveredData,
   });
 });
 
-
 export const getAllOrdersWithProducts = asyncHandler(async (req, res) => {
   const orders = await Order.find()
-    .populate('user', 'name email')
-    .populate('products'); // Includes GamingProduct details
+    .populate("user", "name email")
+    .populate("products"); // Includes GamingProduct details
 
-  const formatted = orders.map(order => ({
+  const formatted = orders.map((order) => ({
     _id: order._id,
     user: order.user,
     totalAmount: order.totalAmount,
@@ -376,7 +386,7 @@ export const getAllOrdersWithProducts = asyncHandler(async (req, res) => {
     gameUID: order.gameUID,
     gameId: order.gameId,
     gamePassword: order.gamePassword,
-    products: order.products.map(p => ({
+    products: order.products.map((p) => ({
       name: p.name,
       productType: p.productType,
       price: p.price,
