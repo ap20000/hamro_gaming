@@ -31,7 +31,7 @@ const ProductSchema = new mongoose.Schema(
             code: String,
             used: { type: Boolean, default: false },
           }
-        ],
+    ],
 
       loginInstructions: { type: String },
 

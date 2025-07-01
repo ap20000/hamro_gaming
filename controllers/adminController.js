@@ -1,5 +1,6 @@
 import GamingProduct from '../models/productModel.js';
 import asyncHandler from '../middlewares/asyncHandler.js';
+import sendEmail from '../services/emailService.js';
 
 import User from '../models/userModel.js';
 import Order from '../models/orderModel.js';
