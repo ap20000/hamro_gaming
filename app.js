@@ -6,7 +6,11 @@ import cors from "cors";
 import session from "express-session";
 import fs from "fs";
 
-import MongoStore from "mongoose";
+import { Server } from 'socket.io';
+import conversationRoutes from './routes/livechat/conversationRoutes.js';
+import messageRoutes from './routes/livechat/messageRoutes.js';
+import uploadRoutes from './routes/livechat/uploadRoutes.js';
+import Message from './models/Message.js';
 
 import passport from "passport";
 import "./config/passport.js";
@@ -156,6 +160,46 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/product", userRoutes);
 app.use("/api/payment", paymentRoutes);
+
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/upload', uploadRoutes);
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('join_conversation', (conversationId) => {
+    socket.join(conversationId);
+    console.log(`Socket ${socket.id} joined room ${conversationId}`);
+  });
+
+  socket.on('send_message', async (data) => {
+    try {
+      const { conversationId, senderId, text, attachmentUrl } = data;
+      const newMessage = await Message.create({
+        conversationId,
+        senderId,
+        text,
+        attachmentUrl,
+      });
+      io.to(conversationId).emit('receive_message', newMessage);
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // ======================
 // Error Handling
