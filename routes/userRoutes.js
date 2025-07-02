@@ -20,12 +20,6 @@ import { protect } from "../middlewares/authMiddleware.js";
 
 
 
-import {
-  placeOrder,
-  getMyOrders,
-  getOrderById,
-  claimGiftcardKey,
-} from "../controllers/orderController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
 const router = express.Router();
