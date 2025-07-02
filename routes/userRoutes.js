@@ -18,15 +18,8 @@ import {
 
 import { protect } from "../middlewares/authMiddleware.js";
 
-import {
-  getAllGamingProducts,
-  getGamingProductById,
-} from "../controllers/userController.js";
-import {
-  addToCart,
-  getCart,
-  removeFromCart,
-} from "../controllers/cartController.js";
+
+
 import {
   placeOrder,
   getMyOrders,
