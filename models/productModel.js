@@ -24,6 +24,17 @@ const ProductSchema = new mongoose.Schema(
       },
     ],
 
+    accounts: [
+          {
+            email: String,
+            password: String,
+            code: String,
+            used: { type: Boolean, default: false },
+          }
+    ],
+
+      loginInstructions: { type: String },
+
     // Giftcard / CDKey
     keys: [{ type: String }],
     expirationDate: { type: Date },

@@ -1,8 +1,9 @@
-import GamingProduct from "../models/productModel.js";
-import asyncHandler from "../middlewares/asyncHandler.js";
+import GamingProduct from '../models/productModel.js';
+import asyncHandler from '../middlewares/asyncHandler.js';
+import sendEmail from '../services/emailService.js';
 
-import User from "../models/userModel.js";
-import Order from "../models/orderModel.js";
+import User from '../models/userModel.js';
+import Order from '../models/orderModel.js';
 // import your User model
 
 export const getTotalUserCount = asyncHandler(async (req, res) => {
@@ -34,6 +35,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
     topupOptions,
     keys,
     expirationDate,
+    accounts,
   } = req.body;
 
   // ✅ Validate required fields
@@ -93,6 +95,20 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
         : keys
       : [];
     if (expirationDate) productData.expirationDate = expirationDate;
+  }
+
+  if (productType === "account") {
+    if (accounts && Array.isArray(accounts)) {
+      productData.accounts = accounts.map((acc) => ({
+        email: acc.email,
+        password: acc.password,
+        code: acc.code || null,
+        used: false,
+      }));
+    } else {
+      res.status(400);
+      throw new Error("Account credentials must be provided as an array");
+    }
   }
 
   // ✅ Create the product
@@ -274,5 +290,114 @@ export const getTotalSalesAmount = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     totalSales,
+  });
+});
+
+// PUT /api/admin/verify-order/:id
+export const verifyOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id)
+    .populate("products")
+    .populate("user", "email");
+
+  if (!order) throw new Error("Order not found");
+
+  const deliveredData = [];
+
+  for (const product of order.products) {
+    const dbProduct = await GamingProduct.findById(product._id);
+
+    if (!dbProduct) {
+      throw new Error(`Product "${product.name}" not found.`);
+    }
+
+    // 🎁 Giftcard/CDKey logic
+    if (product.productType === "giftcard" || product.productType === "cdkey") {
+      if (!dbProduct.keys || dbProduct.keys.length === 0) {
+        throw new Error(`Product "${product.name}" is out of stock.`);
+      }
+
+      const assignedKey = dbProduct.keys.shift(); // remove first key
+      deliveredData.push({
+        name: product.name,
+        type: product.productType,
+        value: assignedKey,
+      });
+
+      await dbProduct.save();
+    }
+
+    // 👤 Account logic
+    else if (product.productType === "account") {
+      const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
+
+      if (!availableAccount) {
+        throw new Error(`No available accounts for "${product.name}".`);
+      }
+
+      availableAccount.used = true;
+
+      deliveredData.push({
+        name: product.name,
+        type: "account",
+        value: {
+          email: availableAccount.email,
+          password: availableAccount.password,
+          code: availableAccount.code || null,
+          loginInstructions:
+            dbProduct.loginInstructions ||
+            "Login with the provided credentials.",
+        },
+      });
+
+      await dbProduct.save();
+    }
+  }
+
+  order.deliveredKeys = deliveredData;
+  order.status = "completed";
+  await order.save();
+
+  // Send confirmation email to user
+  await sendEmail({
+    to: order.user.email,
+    subject: "✅ Your Order is Completed",
+    text: `Your order #${order._id} has been verified. Please check your dashboard or live chat for access details.`,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Order verified and content delivered",
+    delivered: deliveredData,
+  });
+});
+
+export const getAllOrdersWithProducts = asyncHandler(async (req, res) => {
+  const orders = await Order.find()
+    .populate("user", "name email")
+    .populate("products"); // Includes GamingProduct details
+
+  const formatted = orders.map((order) => ({
+    _id: order._id,
+    user: order.user,
+    totalAmount: order.totalAmount,
+    status: order.status,
+    transactionCode: order.transactionCode,
+    selectedTopup: order.selectedTopup,
+    gameUID: order.gameUID,
+    gameId: order.gameId,
+    gamePassword: order.gamePassword,
+    products: order.products.map((p) => ({
+      name: p.name,
+      productType: p.productType,
+      price: p.price,
+      image: p.image,
+    })),
+    createdAt: order.createdAt,
+  }));
+
+  res.status(200).json({
+    success: true,
+    count: formatted.length,
+    orders: formatted,
   });
 });
