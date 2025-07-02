@@ -111,7 +111,7 @@ app.use(limiter);
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://hamro-gaming.onrender.com/api",
+  "https://hamro-gaming.onrender.com",
 ];
 
 app.use(
