@@ -17,7 +17,7 @@ import {
 } from "../controllers/orderController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
-import express from "express";
+
 import {
   getAllGamingProducts,
   getGamingProductById,
