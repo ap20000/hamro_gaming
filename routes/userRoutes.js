@@ -19,6 +19,7 @@ import {
 import { protect } from "../middlewares/authMiddleware.js";
 
 
+
 const router = express.Router();
 
 router.get("/products", getAllGamingProducts); // GET /api/products
