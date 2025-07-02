@@ -34,9 +34,7 @@ router.get("/products", getAllGamingProducts); // GET /api/products
 router.get("/products/:id", getGamingProductById);
 
 // Cart Routes
-router.post("/cart", protect, addToCart);
-router.get("/cart", protect, getCart);
-router.delete("/cart/:productId", protect, removeFromCart);
+
 router.post("/cart", protect, addToCart);
 router.get("/cart", protect, getCart);
 router.delete("/cart/:productId", protect, removeFromCart);
