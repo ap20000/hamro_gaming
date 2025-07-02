@@ -5,6 +5,7 @@ import morgan from "morgan";
 import cors from "cors";
 import session from "express-session";
 import fs from "fs";
+import http from 'http';
 
 import { Server } from 'socket.io';
 import conversationRoutes from './routes/livechat/conversationRoutes.js';
