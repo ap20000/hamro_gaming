@@ -5,20 +5,18 @@ import morgan from "morgan";
 import cors from "cors";
 import session from "express-session";
 import fs from "fs";
-import http from 'http';
-
-import { Server } from 'socket.io';
-import conversationRoutes from './routes/livechat/conversationRoutes.js';
-import messageRoutes from './routes/livechat/messageRoutes.js';
-import uploadRoutes from './routes/livechat/uploadRoutes.js';
-import Message from './models/Message.js';
-
+import http from "http";
+import { Server } from "socket.io";
+import conversationRoutes from "./routes/livechat/conversationRoutes.js";
+import messageRoutes from "./routes/livechat/messageRoutes.js";
+import uploadRoutes from "./routes/livechat/uploadRoutes.js";
+import Message from "./models/Message.js";
+import Conversation from "./models/Conversation.js";
 import passport from "passport";
 import "./config/passport.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 
 //image processing
-
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -34,7 +32,6 @@ import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -44,7 +41,6 @@ const gamesImagePath = path.join(__dirname, "/uploads/games");
 if (!fs.existsSync(gamesImagePath)) {
   fs.mkdirSync(gamesImagePath, { recursive: true });
 }
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const paymentQRPath = path.join(__dirname, "/uploads/payment");
@@ -95,6 +91,7 @@ const xssSanitize = (req, res, next) => {
   req.params = clean(req.params);
   next();
 };
+
 app.use(xssSanitize);
 
 // Rate limiting to prevent brute-force and DoS
@@ -103,6 +100,7 @@ const limiter = rateLimit({
   max: 100,
   message: "Too many requests from this IP, please try again later",
 });
+
 app.use(limiter);
 
 // ======================
@@ -111,12 +109,12 @@ app.use(limiter);
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://hamro-gaming.onrender.com/api",
+  "https://hamro-gaming.onrender.com",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -141,10 +139,6 @@ app.use(
     secret: process.env.SESSION_SECRET || "mysecretkey",
     resave: false,
     saveUninitialized: false,
-    // store: MongoStore.create({
-    //   mongoUrl: process.env.MONGO_URI,
-    //   collectionName: 'sessions',
-    // }),
     cookie: {
       secure: process.env.NODE_ENV === "production", // true on HTTPS
       httpOnly: true,
@@ -161,44 +155,116 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/product", userRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/upload", uploadRoutes);
 
-app.use('/api/conversations', conversationRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/upload', uploadRoutes);
+// ======================
+// Socket.IO Setup
+// ======================
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+// Store active connections
+const activeConnections = new Map();
+const adminConnections = new Set();
 
-  socket.on('join_conversation', (conversationId) => {
-    socket.join(conversationId);
-    console.log(`Socket ${socket.id} joined room ${conversationId}`);
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  // Handle admin joining
+  socket.on("admin_join", () => {
+    adminConnections.add(socket.id);
+    console.log("Admin joined:", socket.id);
+
+    // Join admin to all existing conversations
+    Conversation.find().then((conversations) => {
+      conversations.forEach((conv) => {
+        socket.join(conv._id.toString());
+      });
+    });
   });
 
-  socket.on('send_message', async (data) => {
+  // Handle joining conversation
+  socket.on("join_conversation", async (conversationId) => {
+    socket.join(conversationId);
+    console.log(`Socket ${socket.id} joined room ${conversationId}`);
+
+    // Store connection info
+    activeConnections.set(socket.id, { conversationId });
+
+    // Create conversation if it doesn't exist (for new account claims)
+    try {
+      let conversation = await Conversation.findById(conversationId);
+      if (!conversation) {
+        // Extract order info from conversationId (assuming format: order_123456)
+        const orderId = conversationId.replace("order_", "");
+        conversation = await Conversation.create({
+          _id: conversationId, // Use the full conversationId as _id
+          participants: ["user", "admin"],
+          status: "active",
+          lastMessage: "",
+          lastMessageTime: new Date(),
+          unreadCount: 0,
+        });
+        console.log("Created new conversation:", conversationId);
+
+        // Notify all admins about new conversation
+        adminConnections.forEach((adminSocketId) => {
+          io.to(adminSocketId).emit("new_conversation", conversation);
+        });
+      }
+    } catch (error) {
+      console.error("Error handling conversation:", error);
+      // Send error back to client
+      socket.emit("conversation_error", {
+        error: "Failed to join conversation",
+        details: error.message,
+      });
+    }
+  });
+
+  // Handle sending messages
+  socket.on("send_message", async (data) => {
     try {
       const { conversationId, senderId, text, attachmentUrl } = data;
+
       const newMessage = await Message.create({
         conversationId,
         senderId,
         text,
         attachmentUrl,
       });
-      io.to(conversationId).emit('receive_message', newMessage);
+
+      console.log("Message saved:", newMessage);
+
+      // Broadcast to all users in the conversation room
+      io.to(conversationId).emit("receive_message", newMessage);
+
+      // Also notify all admins if sender is not admin
+      if (!senderId.includes("admin")) {
+        adminConnections.forEach((adminSocketId) => {
+          io.to(adminSocketId).emit("receive_message", newMessage);
+        });
+      }
     } catch (err) {
-      console.error('Error saving message:', err);
+      console.error("Error saving message:", err);
+      socket.emit("message_error", { error: "Failed to send message" });
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+    activeConnections.delete(socket.id);
+    adminConnections.delete(socket.id);
   });
 });
 
@@ -208,5 +274,16 @@ io.on('connection', (socket) => {
 
 app.use(notFound);
 app.use(errorHandler);
+
+// ======================
+// Start Server
+// ======================
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.IO server ready`);
+});
 
 export default app;
