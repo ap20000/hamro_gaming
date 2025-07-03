@@ -71,34 +71,46 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
 
 
 export const loginUser = asyncHandler(async (req, res) => {
+  console.log("🔐 [loginUser] Login attempt");
+  console.log("Body:", req.body);
+
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
 
   if (!user) {
+    console.log("❌ User not found for email:", email);
     res.status(401);
     throw new Error('Invalid email or password');
   }
 
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
+    console.log("❌ Password mismatch for user:", user.email);
     res.status(401);
     throw new Error('Invalid email or password');
   }
 
   if (!user.isVerified) {
+    console.log("❌ User not verified:", user.email);
     res.status(403);
     throw new Error('Please verify your email before logging in');
   }
 
+  console.log("✅ User authenticated:", user.email);
+  console.log("Setting cookies with NODE_ENV =", process.env.NODE_ENV);
+
+  // CALL generateToken
   generateToken(res, user._id, user.role);
 
+  console.log("✅ Cookies set for jwt and role");
 
   res.json({
     success: true,
     user: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });
+
 
 
 export const logoutUser = asyncHandler(async (req, res) => {
