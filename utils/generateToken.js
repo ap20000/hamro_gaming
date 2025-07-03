@@ -7,15 +7,15 @@ const generateToken = (res, userId, role) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: false, // ✅ works over HTTP during development
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",  // secure:true in prod
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("role", role, {
     httpOnly: true,
-    secure: false, // ✅ works over HTTP during development
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
