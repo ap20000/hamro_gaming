@@ -111,7 +111,7 @@ app.use(limiter);
 const allowedOrigins = [
   "http://localhost:3000",
   "https://hamro-gaming.onrender.com",
-  "https://hamro-gaming-frontend.vercel.app"
+  "https://hamro-gaming-frontend.vercel.app",
    'https://frontend-1qzh.vercel.app'
 ];
 
