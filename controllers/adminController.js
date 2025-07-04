@@ -312,9 +312,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
     // 🎁 Giftcard/CDKey logic
     if (product.productType === "giftcard" || product.productType === "cdkey") {
-      if (!dbProduct.keys || dbProduct.keys.length === 0) {
-        throw new Error(`Product "${product.name}" is out of stock.`);
-      }
+      // if (!dbProduct.keys || dbProduct.keys.length === 0) {
+      //   throw new Error(`Product "${product.name}" is out of stock.`);
+      // }
 
       const assignedKey = dbProduct.keys.shift(); // remove first key
       deliveredData.push({
@@ -330,9 +330,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
     else if (product.productType === "account") {
       const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
 
-      if (!availableAccount) {
-        throw new Error(`No available accounts for "${product.name}".`);
-      }
+      // if (!availableAccount) {
+      //   throw new Error(`No available accounts for "${product.name}".`);
+      // }
 
       availableAccount.used = true;
 
