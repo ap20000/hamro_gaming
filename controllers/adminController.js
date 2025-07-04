@@ -330,9 +330,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
     else if (product.productType === "account") {
       const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
 
-      // if (!availableAccount) {
-      //   throw new Error(`No available accounts for "${product.name}".`);
-      // }
+      if (!availableAccount) {
+        throw new Error(`No available accounts for "${product.name}".`);
+      }
 
       availableAccount.used = true;
 
