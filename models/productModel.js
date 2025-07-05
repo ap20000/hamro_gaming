@@ -24,14 +24,28 @@ const ProductSchema = new mongoose.Schema(
       },
     ],
 
+    accountType: {
+      type: String,
+      enum: ['private', 'shared'],
+    },
+    
     accounts: [
-          {
-            email: String,
-            password: String,
-            code: String,
-            used: { type: Boolean, default: false },
-          }
+      {
+        email: String,
+        password: String,
+        code: String,
+        used: { type: Boolean, default: false },
+      }
     ],
+    
+    sharedAccount: {
+      email: String,
+      password: String,
+      code: String,
+      quantity: { type: Number, default: 0 },
+      soldCount: { type: Number, default: 0 }
+    },
+
 
       loginInstructions: { type: String },
 
