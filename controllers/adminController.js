@@ -349,29 +349,52 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
     // 👤 Account logic
     else if (product.productType === "account") {
-      const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
+  if (dbProduct.accountType === "private") {
+    const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
 
-      if (!availableAccount) {
-        throw new Error(`No available accounts for "${product.name}".`);
-      }
-
-      availableAccount.used = true;
-
-      deliveredData.push({
-        name: product.name,
-        type: "account",
-        value: {
-          email: availableAccount.email,
-          password: availableAccount.password,
-          code: availableAccount.code || null,
-          loginInstructions:
-            dbProduct.loginInstructions ||
-            "Login with the provided credentials.",
-        },
-      });
-
-      await dbProduct.save();
+    if (!availableAccount) {
+      throw new Error(`No available private accounts for "${product.name}".`);
     }
+
+    availableAccount.used = true;
+
+    deliveredData.push({
+      name: product.name,
+      type: "account",
+      value: {
+        email: availableAccount.email,
+        password: availableAccount.password,
+        code: availableAccount.code || null,
+        loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
+      },
+    });
+
+  } else if (dbProduct.accountType === "shared") {
+    if (!dbProduct.sharedAccount) {
+      throw new Error(`No shared account configured for "${product.name}".`);
+    }
+
+    if (dbProduct.sharedAccount.soldCount >= dbProduct.sharedAccount.quantity) {
+      throw new Error(`Shared account for "${product.name}" is sold out.`);
+    }
+
+    dbProduct.sharedAccount.soldCount += 1;
+
+    deliveredData.push({
+      name: product.name,
+      type: "account",
+      value: {
+        email: dbProduct.sharedAccount.email,
+        password: dbProduct.sharedAccount.password,
+        code: dbProduct.sharedAccount.code || null,
+        loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
+      },
+    });
+  }
+
+  await dbProduct.save();
+  }
+
   }
 
   order.deliveredKeys = deliveredData;
