@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
-
+const GiftcardAmountOptionSchema = new mongoose.Schema(
+  {
+    label: String,
+    amount: Number,
+    price: Number,
+    quantity: Number
+  },
+  { _id: false }           // 👈 this part
+);
 const ProductSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -12,6 +20,7 @@ const ProductSchema = new mongoose.Schema(
     gameType: { type: String, required: true }, // e.g., PUBG, Free Fire
     status: { type: String, default: 'active' },
     productType: { type: String, required: true }, // topup, giftcard, cdkey
+    giftcardAmountOptions: [GiftcardAmountOptionSchema],
 
     // Topup Specific
     itemType: { type: String }, // e.g., UC, Diamond
