@@ -3,12 +3,16 @@ import GamingProduct from '../models/productModel.js';
 import asyncHandler from '../middlewares/asyncHandler.js';
 
 export const getAllGamingProducts = asyncHandler(async (req, res) => {
-  const { gameType, productType } = req.query;
+  const { gameType, productType, search } = req.query;
 
   const query = { status: 'active' };
 
   if (gameType) query.gameType = gameType;
   if (productType) query.productType = productType;
+
+  if (search) {
+    query.name = { $regex: search, $options: 'i' };  // case-insensitive search
+  }
 
   const products = await GamingProduct.find(query).sort({ createdAt: -1 });
 
@@ -18,6 +22,7 @@ export const getAllGamingProducts = asyncHandler(async (req, res) => {
     products,
   });
 });
+
 
 
 export const getGamingProductById = asyncHandler(async (req, res) => {
