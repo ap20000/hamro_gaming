@@ -98,6 +98,9 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   }
 
   if (productType === "account") {
+  productData.accountType = req.body.accountType;
+
+  if (req.body.accountType === "private") {
     if (accounts && Array.isArray(accounts)) {
       productData.accounts = accounts.map((acc) => ({
         email: acc.email,
@@ -107,9 +110,27 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
       }));
     } else {
       res.status(400);
-      throw new Error("Account credentials must be provided as an array");
+      throw new Error("Private accounts must be provided as an array");
     }
+  } else if (req.body.accountType === "shared") {
+    if (req.body.sharedAccount) {
+      productData.sharedAccount = {
+        email: req.body.sharedAccount.email,
+        password: req.body.sharedAccount.password,
+        code: req.body.sharedAccount.code || null,
+        quantity: req.body.sharedAccount.quantity || 0,
+        soldCount: 0
+      };
+    } else {
+      res.status(400);
+      throw new Error("Shared account details must be provided");
+    }
+  } else {
+    res.status(400);
+    throw new Error("accountType must be 'private' or 'shared'");
   }
+}
+
 
   // ✅ Create the product
   const product = await GamingProduct.create(productData);
