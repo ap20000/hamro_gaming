@@ -43,7 +43,6 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   if (
     !name ||
     !description ||
-    !price ||
     !deliveryTime ||
     !platform ||
     !region ||
