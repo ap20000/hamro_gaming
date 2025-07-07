@@ -75,17 +75,28 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   };
 
   // 🔁 TOP-UP product logic (e.g., PUBG UC, Free Fire Diamonds)
+  let topupOptionsParsed = topupOptions;
+
+  if (typeof topupOptions === 'string') {
+    try {
+      topupOptionsParsed = JSON.parse(topupOptions);
+    } catch (error) {
+      topupOptionsParsed = [];
+    }
+  }
+  
   if (productType === "topup") {
     if (itemType) productData.itemType = itemType;
-
-    if (topupOptions && Array.isArray(topupOptions)) {
-      productData.topupOptions = topupOptions.map((option) => ({
+  
+    if (topupOptionsParsed && Array.isArray(topupOptionsParsed)) {
+      productData.topupOptions = topupOptionsParsed.map((option) => ({
         label: option.label,
-        amount: option.amount,
-        price: option.price,
+        amount: Number(option.amount), // parse to number
+        price: Number(option.price),   // parse to number
       }));
     }
   }
+
 
   // 💳 Giftcard or CD Key logic
   if (productType === "giftcard" || productType === "cdkey") {
