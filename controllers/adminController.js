@@ -90,6 +90,13 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
   // 💳 Giftcard or CD Key logic
   if (productType === "giftcard" || productType === "cdkey") {
     if (giftcardAmountOptions && Array.isArray(giftcardAmountOptions)) {
+      for (const opt of giftcardAmountOptions) {
+        if (!opt.label || !opt.amount || !opt.price) {
+          res.status(400);
+          throw new Error("Each giftcardAmountOption must include label, amount, and price");
+        }
+      }
+    
       productData.giftcardAmountOptions = giftcardAmountOptions.map(opt => ({
         label: opt.label,
         amount: opt.amount,
@@ -97,6 +104,7 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
         quantity: opt.quantity || 0
       }));
     }
+
     
     productData.keys = keys
       ? typeof keys === "string"
