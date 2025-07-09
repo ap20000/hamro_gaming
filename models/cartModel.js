@@ -14,8 +14,8 @@ const CartItemSchema = new mongoose.Schema(
     },
     selectedOption: {
       label: { type: String, required: true },   // The selected top-up option's label
-      amount: { type: Number },                  // Optional amount (e.g., 100 UC)
-      price: { type: Number },                   // Price user will pay
+      amount: { type: String },                  // Optional amount (e.g., 100 UC)
+      price: { type: String },                   // Price user will pay
     },
     quantity: {
       type: Number,
