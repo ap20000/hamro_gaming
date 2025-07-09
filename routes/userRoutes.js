@@ -29,7 +29,7 @@ router.get("/products/:id", getGamingProductById);
 
 router.post("/cart", protect, addToCart);
 router.get("/cart", protect, getCart);
-router.delete("/cart/:productId", protect, removeFromCart);
+router.delete("/cart/:productId/:label", protect, removeFromCart);
 
 // Order Routes
 router.post("/orders", protect, placeOrder);
