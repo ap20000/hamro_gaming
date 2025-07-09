@@ -1,75 +1,116 @@
 import asyncHandler from '../middlewares/asyncHandler.js';
 import Cart from '../models/cartModel.js';
 
+// ✅ Add to Cart
 export const addToCart = asyncHandler(async (req, res) => {
   console.log('🛒 [addToCart] Request received');
-  console.log('👉 Cookies:', req.cookies);
-  console.log('👉 req.user:', req.user);
   console.log('👉 Body:', req.body);
 
   if (!req.user || !req.user._id) {
-    console.error('❌ [addToCart] Missing req.user. Not authenticated?');
     res.status(401);
     throw new Error('Not authenticated. Please login again.');
   }
 
-  const { productId } = req.body;
+  const { productId, selectedOption, quantity } = req.body;
   const userId = req.user._id;
+
+  if (!productId) {
+    res.status(400);
+    throw new Error('Product ID is required');
+  }
 
   let cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
-    console.log('🆕 Creating new cart for user:', userId);
-    cart = await Cart.create({ user: userId, products: [productId] });
+    console.log('🆕 No cart found, creating new...');
+    cart = await Cart.create({
+      user: userId,
+      products: [{
+        product: productId,
+        selectedOption,
+        quantity: quantity || 1,
+      }],
+    });
   } else {
-    if (!cart.products.includes(productId)) {
-      console.log('✅ Adding new product to existing cart:', productId);
-      cart.products.push(productId);
-      await cart.save();
+    console.log('🔎 Cart exists, checking for existing item...');
+    const existingIndex = cart.products.findIndex(
+      p =>
+        p.product.toString() === productId &&
+        (!selectedOption?.label || p.selectedOption?.label === selectedOption?.label)
+    );
+
+    if (existingIndex === -1) {
+      console.log('✅ Adding new item to cart');
+      cart.products.push({
+        product: productId,
+        selectedOption,
+        quantity: quantity || 1,
+      });
     } else {
-      console.log('ℹ️ Product already in cart:', productId);
+      console.log('ℹ️ Item already in cart with same option, increasing quantity');
+      cart.products[existingIndex].quantity += quantity || 1;
     }
+
+    await cart.save();
   }
 
   res.status(200).json({ success: true, cart });
 });
 
-
+// ✅ Get Cart
 export const getCart = asyncHandler(async (req, res) => {
-  console.log('🛒 [getCart] Cookies:', req.cookies);
-  console.log('👉 req.user:', req.user);
-
   if (!req.user || !req.user._id) {
-    console.error('❌ [getCart] Missing req.user. Not authenticated?');
     res.status(401);
     throw new Error('Not authenticated. Please login again.');
   }
 
-  const cart = await Cart.findOne({ user: req.user._id }).populate('products');
-  res.status(200).json({ success: true, cart });
+  const cart = await Cart.findOne({ user: req.user._id }).populate('products.product');
+
+  if (!cart) {
+    return res.status(200).json({ success: true, cart: { products: [] } });
+  }
+
+  res.status(200).json({
+    success: true,
+    cart: {
+      _id: cart._id,
+      user: cart.user,
+      products: cart.products.map(item => ({
+        product: item.product,
+        selectedOption: item.selectedOption,
+        quantity: item.quantity,
+      })),
+    },
+  });
 });
 
-
+// ✅ Remove from Cart
 export const removeFromCart = asyncHandler(async (req, res) => {
-  console.log('🗑️ [removeFromCart] Cookies:', req.cookies);
-  console.log('👉 req.user:', req.user);
-  console.log('👉 Params:', req.params);
-
   if (!req.user || !req.user._id) {
-    console.error('❌ [removeFromCart] Missing req.user. Not authenticated?');
     res.status(401);
     throw new Error('Not authenticated. Please login again.');
+  }
+
+  const { productId, label } = req.params;
+
+  if (!productId) {
+    res.status(400);
+    throw new Error('Product ID is required');
   }
 
   const cart = await Cart.findOne({ user: req.user._id });
 
   if (!cart) {
-    console.error('❌ Cart not found for user:', req.user._id);
     res.status(404);
     throw new Error('Cart not found');
   }
 
-  cart.products = cart.products.filter(p => p.toString() !== req.params.productId);
+  cart.products = cart.products.filter(
+    p =>
+      p.product.toString() !== productId ||
+      (label && p.selectedOption?.label !== label)
+  );
+
   await cart.save();
 
   res.status(200).json({ success: true, cart });
