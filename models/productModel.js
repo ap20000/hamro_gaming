@@ -40,20 +40,29 @@ const ProductSchema = new mongoose.Schema(
     
     accounts: [
       {
-        email: String,
-        password: String,
-        code: String,
+        label: { type: String, required: true },
+        price: { type: Number, required: true },
+        details: {
+          email: String,
+          password: String,
+          code: String,
+        },
         used: { type: Boolean, default: false },
       }
     ],
     
     sharedAccount: {
-      email: String,
-      password: String,
-      code: String,
+      label: { type: String, required: true },
+      price: { type: Number, required: true },
+      details: {
+        email: String,
+        password: String,
+        code: String,
+      },
       quantity: { type: Number, default: 0 },
       soldCount: { type: Number, default: 0 }
     },
+
 
 
       loginInstructions: { type: String },
