@@ -141,35 +141,62 @@ if (productType === "giftcard" || productType === "cdkey") {
     productData.accountType = req.body.accountType;
   
     if (req.body.accountType === "private") {
-      if (accounts && Array.isArray(accounts)) {
-        productData.accounts = accounts.map((acc) => ({
+      if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
+        res.status(400);
+        throw new Error("Private accounts must be provided as a non-empty array");
+      }
+  
+      // Validate each
+      for (const acc of accounts) {
+        if (!acc.label || acc.price === undefined) {
+          res.status(400);
+          throw new Error("Each private account must include label and price");
+        }
+      }
+  
+      productData.accounts = accounts.map((acc) => ({
+        label: acc.label,
+        price: Number(acc.price),
+        details: {
           email: acc.email,
           password: acc.password,
           code: acc.code || null,
-          used: false,
-        }));
-      } else {
-        res.status(400);
-        throw new Error("Private accounts must be provided as an array");
-      }
-    } else if (req.body.accountType === "shared") {
-      if (req.body.sharedAccount) {
-        productData.sharedAccount = {
-          email: req.body.sharedAccount.email,
-          password: req.body.sharedAccount.password,
-          code: req.body.sharedAccount.code || null,
-          quantity: req.body.sharedAccount.quantity || 0,
-          soldCount: 0
-        };
-      } else {
+        },
+        used: false,
+      }));
+    } 
+    
+    else if (req.body.accountType === "shared") {
+      if (!req.body.sharedAccount) {
         res.status(400);
         throw new Error("Shared account details must be provided");
       }
-    } else {
+  
+      const shared = req.body.sharedAccount;
+      if (!shared.label || shared.price === undefined) {
+        res.status(400);
+        throw new Error("Shared account must include label and price");
+      }
+  
+      productData.sharedAccount = {
+        label: shared.label,
+        price: Number(shared.price),
+        details: {
+          email: shared.email,
+          password: shared.password,
+          code: shared.code || null,
+        },
+        quantity: Number(shared.quantity) || 0,
+        soldCount: 0
+      };
+    } 
+    
+    else {
       res.status(400);
       throw new Error("accountType must be 'private' or 'shared'");
     }
   }
+
 
 
   // ✅ Create the product
