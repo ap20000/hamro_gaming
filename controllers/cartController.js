@@ -33,10 +33,14 @@ export const addToCart = asyncHandler(async (req, res) => {
     });
   } else {
     console.log('🔎 Cart exists, checking for existing item...');
+
     const existingIndex = cart.products.findIndex(
       p =>
         p.product.toString() === productId &&
-        (!selectedOption?.label || p.selectedOption?.label === selectedOption?.label)
+        (
+          (!p.selectedOption?.label && !selectedOption?.label) ||
+          (p.selectedOption?.label === selectedOption?.label)
+        )
     );
 
     if (existingIndex === -1) {
@@ -56,6 +60,7 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, cart });
 });
+
 
 // ✅ Get Cart
 export const getCart = asyncHandler(async (req, res) => {
