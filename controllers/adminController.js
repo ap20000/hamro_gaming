@@ -99,32 +99,42 @@ export const addGamingProduct = asyncHandler(async (req, res) => {
 
 
   // 💳 Giftcard or CD Key logic
-  if (productType === "giftcard" || productType === "cdkey") {
-    if (giftcardAmountOptions && Array.isArray(giftcardAmountOptions)) {
-      for (const opt of giftcardAmountOptions) {
-        if (!opt.label || !opt.amount || !opt.price) {
-          res.status(400);
-          throw new Error("Each giftcardAmountOption must include label, amount, and price");
-        }
+  // 💳 Giftcard or CD Key logic
+if (productType === "giftcard" || productType === "cdkey") {
+  let giftcardAmountOptionsParsed = giftcardAmountOptions;
+
+  if (typeof giftcardAmountOptions === 'string') {
+    try {
+      giftcardAmountOptionsParsed = JSON.parse(giftcardAmountOptions);
+    } catch (error) {
+      giftcardAmountOptionsParsed = [];
+    }
+  }
+
+  if (giftcardAmountOptionsParsed && Array.isArray(giftcardAmountOptionsParsed)) {
+    for (const opt of giftcardAmountOptionsParsed) {
+      if (!opt.label || !opt.amount || !opt.price) {
+        res.status(400);
+        throw new Error("Each giftcardAmountOption must include label, amount, and price");
       }
-    
-      productData.giftcardAmountOptions = giftcardAmountOptions.map(opt => ({
-        label: opt.label,
-        amount: opt.amount,
-        price: opt.price,
-        quantity: opt.quantity || 0
-      }));
     }
 
+      productData.giftcardAmountOptions = giftcardAmountOptionsParsed.map(opt => ({
+          label: opt.label,
+          amount: Number(opt.amount),
+          price: Number(opt.price),
+          quantity: Number(opt.quantity) || 0
+        }));
+      }
     
-    productData.keys = keys
-      ? typeof keys === "string"
-        ? keys.split(",").map((k) => k.trim())
-        : keys
-      : [];
-  
-    if (expirationDate) productData.expirationDate = expirationDate;
-  }
+      productData.keys = keys
+        ? typeof keys === "string"
+          ? keys.split(",").map((k) => k.trim())
+          : keys
+        : [];
+    
+      if (expirationDate) productData.expirationDate = expirationDate;
+    }
 
 
   if (productType === "account") {
@@ -196,18 +206,126 @@ export const updateGamingProduct = asyncHandler(async (req, res) => {
     region,
     gameType,
     status,
+    itemType,
+    topupOptions,
+    giftcardAmountOptions,
+    keys,
+    expirationDate,
+    accountType,
+    accounts,
+    sharedAccount
   } = req.body;
 
-  product.name = name || product.name;
-  product.description = description || product.description;
-  product.price = price || product.price;
-  product.deliveryTime = deliveryTime || product.deliveryTime;
-  product.platform = platform || product.platform;
-  product.region = region || product.region;
-  product.gameType = gameType || product.gameType;
-  product.status = status || product.status;
+  // ✅ Basic fields
+  product.name = name ?? product.name;
+  product.description = description ?? product.description;
+  product.price = price ?? product.price;
+  product.deliveryTime = deliveryTime ?? product.deliveryTime;
+  product.platform = platform ?? product.platform;
+  product.region = region ?? product.region;
+  product.gameType = gameType ?? product.gameType;
+  product.status = status ?? product.status;
   if (req.file) {
     product.image = `/uploads/games/${req.file.filename}`;
+  }
+
+  // ✅ itemType for topup
+  if (itemType !== undefined) {
+    product.itemType = itemType;
+  }
+
+  // ✅ Parse and update topupOptions
+  let topupOptionsParsed = topupOptions;
+  if (typeof topupOptions === 'string') {
+    try {
+      topupOptionsParsed = JSON.parse(topupOptions);
+    } catch (err) {
+      topupOptionsParsed = [];
+    }
+  }
+
+  if (topupOptionsParsed && Array.isArray(topupOptionsParsed)) {
+    product.topupOptions = topupOptionsParsed.map(opt => ({
+      label: opt.label,
+      amount: Number(opt.amount),
+      price: Number(opt.price),
+    }));
+  }
+
+  // ✅ Parse and update giftcardAmountOptions
+  let giftcardAmountOptionsParsed = giftcardAmountOptions;
+  if (typeof giftcardAmountOptions === 'string') {
+    try {
+      giftcardAmountOptionsParsed = JSON.parse(giftcardAmountOptions);
+    } catch (err) {
+      giftcardAmountOptionsParsed = [];
+    }
+  }
+
+  if (giftcardAmountOptionsParsed && Array.isArray(giftcardAmountOptionsParsed)) {
+    product.giftcardAmountOptions = giftcardAmountOptionsParsed.map(opt => ({
+      label: opt.label,
+      amount: Number(opt.amount),
+      price: Number(opt.price),
+      quantity: Number(opt.quantity) || 0
+    }));
+  }
+
+  // ✅ Keys for CDKeys or Giftcards
+  if (keys !== undefined) {
+    if (typeof keys === 'string') {
+      product.keys = keys.split(',').map(k => k.trim());
+    } else if (Array.isArray(keys)) {
+      product.keys = keys;
+    }
+  }
+
+  if (expirationDate) {
+    product.expirationDate = expirationDate;
+  }
+
+  // ✅ Account data
+  if (accountType) {
+    product.accountType = accountType;
+
+    if (accountType === 'private' && accounts) {
+      let accountsParsed = accounts;
+      if (typeof accounts === 'string') {
+        try {
+          accountsParsed = JSON.parse(accounts);
+        } catch (err) {
+          accountsParsed = [];
+        }
+      }
+      if (Array.isArray(accountsParsed)) {
+        product.accounts = accountsParsed.map(acc => ({
+          email: acc.email,
+          password: acc.password,
+          code: acc.code || null,
+          used: acc.used ?? false
+        }));
+      }
+    }
+
+    if (accountType === 'shared' && sharedAccount) {
+      let sharedAccountParsed = sharedAccount;
+      if (typeof sharedAccount === 'string') {
+        try {
+          sharedAccountParsed = JSON.parse(sharedAccount);
+        } catch (err) {
+          sharedAccountParsed = null;
+        }
+      }
+      if (sharedAccountParsed) {
+        product.sharedAccount = {
+          email: sharedAccountParsed.email,
+          password: sharedAccountParsed.password,
+          code: sharedAccountParsed.code || null,
+          quantity: Number(sharedAccountParsed.quantity) || 0,
+          soldCount: sharedAccountParsed.soldCount ?? 0
+        };
+      }
+    }
   }
 
   const updatedProduct = await product.save();
