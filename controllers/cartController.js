@@ -1,7 +1,9 @@
 import asyncHandler from '../middlewares/asyncHandler.js';
 import Cart from '../models/cartModel.js';
 
-// ✅ Add to Cart (only selected top-up option)
+/**
+ * Utility to remove unwanted fields (like _id) from selectedOption
+ */
 function cleanOption(option) {
   if (!option) return {};
   return {
@@ -30,18 +32,23 @@ export const addToCart = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Product ID is required');
   }
+
   if (!selectedOption || !selectedOption.label || selectedOption.price == null) {
     res.status(400);
     throw new Error('Selected option with label and price is required');
   }
 
+  // Clean incoming selectedOption
   const cleanedSelectedOption = cleanOption(selectedOption);
   console.log('✅ Cleaned selectedOption:', cleanedSelectedOption);
 
+  // Check if user already has a cart
+  console.log('ℹ️ [addToCart] Looking for existing cart...');
   let cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
-    console.log('🆕 No cart found. Creating...');
+    // No existing cart - create new
+    console.log('🆕 [addToCart] No cart found. Creating new cart...');
     cart = await Cart.create({
       user: userId,
       products: [{
@@ -50,27 +57,35 @@ export const addToCart = asyncHandler(async (req, res) => {
         quantity: quantity || 1,
       }],
     });
+    console.log('✅ [addToCart] New cart created:', cart._id);
   } else {
-    console.log('✅ Existing cart found:', cart._id);
+    // Cart exists
+    console.log('✅ [addToCart] Existing cart found:', cart._id);
 
+    // Check if same product and option exists
     const existingIndex = cart.products.findIndex(p =>
       p.product.toString() === productId &&
       p.selectedOption?.label === cleanedSelectedOption.label
     );
 
-    console.log('ℹ️ Existing item index:', existingIndex);
+    console.log('ℹ️ [addToCart] Existing item index:', existingIndex);
 
     if (existingIndex === -1) {
+      // Add new item
+      console.log('✅ [addToCart] Adding new item...');
       cart.products.push({
         product: productId,
         selectedOption: cleanedSelectedOption,
         quantity: quantity || 1,
       });
     } else {
+      // Increase quantity
+      console.log('ℹ️ [addToCart] Item exists. Increasing quantity...');
       cart.products[existingIndex].quantity += quantity || 1;
     }
 
-    // Deep-clean ALL items
+    // 💥 IMPORTANT:
+    // Clean **all** items before save to strip any unwanted _id in selectedOption
     cart.products = cart.products.map(item => ({
       product: item.product,
       selectedOption: cleanOption(item.selectedOption),
@@ -78,13 +93,13 @@ export const addToCart = asyncHandler(async (req, res) => {
     }));
 
     await cart.save();
+    console.log('✅ [addToCart] Cart updated:', cart._id);
   }
 
   res.status(200).json({ success: true, cart });
   console.log('🛒 [addToCart] Finished');
   console.log('============================');
 });
-
 
 // ✅ Get Cart (populate product details)
 export const getCart = asyncHandler(async (req, res) => {
@@ -127,7 +142,7 @@ export const getCart = asyncHandler(async (req, res) => {
   console.log('============================');
 });
 
-// ✅ Remove from Cart (by productId and option label)
+// ✅ Remove from Cart
 export const removeFromCart = asyncHandler(async (req, res) => {
   console.log('============================');
   console.log('🗑️ [removeFromCart] Called');
@@ -166,6 +181,13 @@ export const removeFromCart = asyncHandler(async (req, res) => {
   );
 
   console.log('✅ [removeFromCart] Products after filter:', cart.products.length);
+
+  // Clean _id from selectedOption in remaining items before save
+  cart.products = cart.products.map(item => ({
+    product: item.product,
+    selectedOption: cleanOption(item.selectedOption),
+    quantity: item.quantity || 1,
+  }));
 
   await cart.save();
 
