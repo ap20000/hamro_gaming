@@ -40,8 +40,8 @@ export const addToCart = asyncHandler(async (req, res) => {
         product: productId,
         selectedOption: {
           label: selectedOption.label,
-          amount: selectedOption.amount,
-          price: selectedOption.price,
+          amount: selectedOption.amount?.toString(),
+          price: selectedOption.price?.toString(),
         },
         quantity: quantity || 1,
       }],
