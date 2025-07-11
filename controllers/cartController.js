@@ -16,7 +16,6 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   const { productId, selectedOption, quantity } = req.body;
 
-  // ✅ Validate inputs
   if (!productId) {
     res.status(400);
     throw new Error('Product ID is required');
@@ -27,21 +26,21 @@ export const addToCart = asyncHandler(async (req, res) => {
     throw new Error('Selected option with label and price is required');
   }
 
-  // ✅ Clean selectedOption (strip unwanted fields)
-  const cleanedSelectedOption = {
-    label: selectedOption.label,
-    amount: selectedOption.amount !== undefined ? Number(selectedOption.amount) : undefined,
-    price: Number(selectedOption.price),
-  };
+  // ✅ Clean the incoming option
+  const cleanOption = (opt) => ({
+    label: opt.label,
+    amount: opt.amount !== undefined ? Number(opt.amount) : undefined,
+    price: Number(opt.price),
+  });
+
+  const cleanedSelectedOption = cleanOption(selectedOption);
 
   console.log('✅ Cleaned selectedOption:', cleanedSelectedOption);
 
-  // 🔎 Find existing cart
   console.log('ℹ️ [addToCart] Looking for existing cart...');
   let cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
-    // 🆕 Create new cart
     console.log('🆕 [addToCart] No cart found. Creating new cart...');
     cart = await Cart.create({
       user: userId,
@@ -53,10 +52,8 @@ export const addToCart = asyncHandler(async (req, res) => {
     });
     console.log('✅ [addToCart] New cart created:', cart._id);
   } else {
-    // ✅ Cart exists
     console.log('✅ [addToCart] Existing cart found:', cart._id);
 
-    // ✅ Check for matching product+option
     const existingIndex = cart.products.findIndex(p =>
       p.product.toString() === productId &&
       p.selectedOption.label === cleanedSelectedOption.label
@@ -65,7 +62,6 @@ export const addToCart = asyncHandler(async (req, res) => {
     console.log('ℹ️ [addToCart] Existing item index:', existingIndex);
 
     if (existingIndex === -1) {
-      // ➕ Add new item
       console.log('✅ [addToCart] Adding new item...');
       cart.products.push({
         product: productId,
@@ -73,19 +69,14 @@ export const addToCart = asyncHandler(async (req, res) => {
         quantity: quantity || 1,
       });
     } else {
-      // ➕ Increase quantity
       console.log('ℹ️ [addToCart] Item exists. Increasing quantity...');
       cart.products[existingIndex].quantity += quantity || 1;
     }
 
-    // ✅ 🧹 Clean **all** existing items before save
+    // ✅ 🧹 Clean **ALL** items before save
     cart.products = cart.products.map(item => ({
       product: item.product,
-      selectedOption: {
-        label: item.selectedOption.label,
-        amount: item.selectedOption.amount !== undefined ? Number(item.selectedOption.amount) : undefined,
-        price: Number(item.selectedOption.price),
-      },
+      selectedOption: cleanOption(item.selectedOption),
       quantity: item.quantity || 1,
     }));
 
@@ -93,11 +84,11 @@ export const addToCart = asyncHandler(async (req, res) => {
     console.log('✅ [addToCart] Cart updated:', cart._id);
   }
 
-  // ✅ Return updated cart
   res.status(200).json({ success: true, cart });
   console.log('🛒 [addToCart] Finished');
   console.log('============================');
 });
+
 
 // ✅ Get Cart (populate product details)
 export const getCart = asyncHandler(async (req, res) => {
