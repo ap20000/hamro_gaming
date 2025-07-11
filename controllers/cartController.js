@@ -17,67 +17,72 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   const { productId, selectedOption, quantity } = req.body;
 
+  // 🧭 Validate inputs
   if (!productId) {
-    console.error('❌ [addToCart] Missing productId');
     res.status(400);
     throw new Error('Product ID is required');
   }
 
-  if (!selectedOption || !selectedOption.label) {
-    console.error('❌ [addToCart] Missing selectedOption.label:', selectedOption);
+  if (!selectedOption || !selectedOption.label || selectedOption.price == null) {
     res.status(400);
-    throw new Error('Selected top-up option with label is required');
+    throw new Error('Selected option with label and price is required');
   }
 
-  console.log('ℹ️ [addToCart] Checking for existing cart for user:', userId);
+  // 🧹 Clean selectedOption (strip extra fields like "quantity")
+  const cleanedSelectedOption = {
+    label: selectedOption.label,
+    amount: selectedOption.amount ? Number(selectedOption.amount) : undefined,
+    price: Number(selectedOption.price),
+  };
+
+  console.log('✅ Cleaned selectedOption:', cleanedSelectedOption);
+
+  // 🔎 Check for existing cart
+  console.log('ℹ️ [addToCart] Looking for existing cart...');
   let cart = await Cart.findOne({ user: userId });
 
   if (!cart) {
+    // 🆕 No cart yet—create new
     console.log('🆕 [addToCart] No cart found. Creating new cart...');
     cart = await Cart.create({
       user: userId,
       products: [{
         product: productId,
-        selectedOption: {
-          label: selectedOption.label,
-          amount: selectedOption.amount?.toString(),
-          price: selectedOption.price?.toString(),
-        },
+        selectedOption: cleanedSelectedOption,
         quantity: quantity || 1,
       }],
     });
-    console.log('✅ [addToCart] New cart created:', JSON.stringify(cart, null, 2));
+    console.log('✅ [addToCart] New cart created:', cart._id);
   } else {
+    // ✅ Cart exists—try to update
     console.log('✅ [addToCart] Existing cart found:', cart._id);
-    console.log('ℹ️ [addToCart] Existing cart products:', cart.products.length);
 
     const existingIndex = cart.products.findIndex(p =>
       p.product.toString() === productId &&
-      p.selectedOption?.label === selectedOption.label
+      p.selectedOption.label === cleanedSelectedOption.label
     );
 
     console.log('ℹ️ [addToCart] Existing item index:', existingIndex);
 
     if (existingIndex === -1) {
-      console.log('✅ [addToCart] Adding new item to cart...');
+      // New item
+      console.log('✅ [addToCart] Adding new item...');
       cart.products.push({
         product: productId,
-        selectedOption: {
-          label: selectedOption.label,
-          amount: selectedOption.amount,
-          price: selectedOption.price,
-        },
+        selectedOption: cleanedSelectedOption,
         quantity: quantity || 1,
       });
     } else {
+      // Increase quantity
       console.log('ℹ️ [addToCart] Item exists. Increasing quantity...');
       cart.products[existingIndex].quantity += quantity || 1;
     }
 
     await cart.save();
-    console.log('✅ [addToCart] Cart updated:', JSON.stringify(cart, null, 2));
+    console.log('✅ [addToCart] Cart updated');
   }
 
+  // ✅ Respond
   res.status(200).json({ success: true, cart });
   console.log('🛒 [addToCart] Finished');
   console.log('============================');
