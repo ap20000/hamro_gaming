@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 /**
- * Each CartItem is *one product with one selected top-up option*.
+ * Each CartItem is one product with one selected top-up option.
  * We store only the selected option (label, amount, price),
  * not the entire topupOptions array from the product.
  */
@@ -13,9 +13,13 @@ const CartItemSchema = new mongoose.Schema(
       required: true,
     },
     selectedOption: {
-      label: { type: String, required: true },   // The selected top-up option's label
-      amount: { type: Number  },                  // Optional amount (e.g., 100 UC)
-      price: { type: Number  },                   // Price user will pay
+      type: {
+        label: { type: String, required: true },
+        amount: { type: Number },
+        price: { type: Number },
+      },
+      required: true,
+      _id: false
     },
     quantity: {
       type: Number,
@@ -23,7 +27,10 @@ const CartItemSchema = new mongoose.Schema(
       min: 1,
     },
   },
-  { _id: false, strict: true,  } // Don't give CartItems their own _id
+  {
+    _id: false,     // No individual _id for each CartItem in products[]
+    strict: true    // Disallow saving undeclared fields
+  }
 );
 
 /**
@@ -35,15 +42,18 @@ const CartSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true, // one cart per user
+      unique: true, // One cart per user
     },
     products: [CartItemSchema],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    strict: true
+  }
 );
 
 // Optional: Mongoose middleware for logging saves
-// Comment this out if you don't want logs in production
+// Remove or comment out in production if too noisy
 /*
 CartSchema.pre('save', function (next) {
   console.log('🗂️ [Cart] About to save cart for user:', this.user);
@@ -53,4 +63,5 @@ CartSchema.pre('save', function (next) {
 */
 
 const Cart = mongoose.model('Cart', CartSchema);
+
 export default Cart;
