@@ -8,10 +8,11 @@ function cleanOption(option) {
   if (!option) return {};
   return {
     label: option.label,
-    amount: option.amount !== undefined ? Number(option.amount) : undefined,
-    price: Number(option.price),
+    amount: option.amount,       // keep as string
+    price: option.price,         // ✅ keep as string
   };
 }
+
 
 // ✅ Add to Cart
 export const addToCart = asyncHandler(async (req, res) => {
