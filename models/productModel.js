@@ -40,8 +40,8 @@ const ProductSchema = new mongoose.Schema(
     
     accounts: [
       {
-        label: { type: String, required: true },
-        price: { type: Number, required: true },
+        label: { type: String},
+        price: { type: Number},
         details: {
           email: String,
           password: String,
@@ -52,8 +52,8 @@ const ProductSchema = new mongoose.Schema(
     ],
     
     sharedAccount: {
-      label: { type: String, required: true },
-      price: { type: Number, required: true },
+      label: { type: String},
+      price: { type: Number},
       details: {
         email: String,
         password: String,
