@@ -164,6 +164,7 @@ if (productType === "giftcard" || productType === "cdkey") {
         },
         used: false,
       }));
+      delete productData.sharedAccount;
     } 
     
     else if (req.body.accountType === "shared") {
@@ -189,6 +190,7 @@ if (productType === "giftcard" || productType === "cdkey") {
         quantity: Number(shared.quantity) || 0,
         soldCount: 0
       };
+       delete productData.accounts;
     } 
     
     else {
