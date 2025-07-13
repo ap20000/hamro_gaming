@@ -128,7 +128,8 @@ export const getOrderById = asyncHandler(async (req, res) => {
     throw new Error("Order not found");
   }
 
-  const showKeys = order.status === "completed" && order.isClaimed;
+  // ✅ Always show deliveredKeys if completed
+  const showKeys = order.status === "completed";
 
   res.status(200).json({
     success: true,
@@ -138,6 +139,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
     },
   });
 });
+
 
 export const claimGiftcardKey = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
