@@ -149,17 +149,24 @@ export const claimGiftcardKey = asyncHandler(async (req, res) => {
     throw new Error("Order not found");
   }
 
-  if (order.status !== "completed") {
-    res.status(400);
-    throw new Error("Order not verified yet.");
+  // ✅ Don't allow claiming if no keys assigned yet
+  if (!order.deliveredKeys || order.deliveredKeys.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Delivery content not ready. Please wait for admin verification.",
+    });
   }
 
+  // ✅ First claim (optional flag)
+  if (!order.isClaimed) {
+    order.isClaimed = true;
+    await order.save();
+  }
 
-  await order.save();
-
+  // ✅ Always return the same delivered keys (never generate again)
   res.status(200).json({
     success: true,
-    message: "Key claimed successfully",
+    message: "Claim successful",
     deliveredKeys: order.deliveredKeys,
   });
 });
