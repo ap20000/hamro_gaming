@@ -540,12 +540,13 @@ export const verifyOrder = asyncHandler(async (req, res) => {
           name: product.name,
           type: "account",
           value: {
-            email: availableAccount.details.email,
-            password: availableAccount.details.password,
-            code: availableAccount.details.code || null,
+            email: availableAccount.email,
+            password: availableAccount.password,
+            code: availableAccount.code || null,
             loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
           },
         });
+        await dbProduct.save();
 
       } else if (dbProduct.accountType === "shared") {
         if (!dbProduct.sharedAccount) {
