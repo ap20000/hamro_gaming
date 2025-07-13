@@ -563,9 +563,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
           name: product.name,
           type: "account",
           value: {
-            email: dbProduct.sharedAccount.details.email,
-            password: dbProduct.sharedAccount.details.password,
-            code: dbProduct.sharedAccount.details.code || null,
+            email: dbProduct.sharedAccount.email,
+            password: dbProduct.sharedAccount.password,
+            code: dbProduct.sharedAccount.code || null,
             loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
           },
         });
