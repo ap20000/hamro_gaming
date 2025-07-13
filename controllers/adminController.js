@@ -510,11 +510,12 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
     // 🎁 Giftcard/CDKey logic
     if (product.productType === "giftcard" || product.productType === "cdkey") {
-      // if (!dbProduct.keys || dbProduct.keys.length === 0) {
-      //   throw new Error(`Product "${product.name}" is out of stock.`);
-      // }
+      if (!dbProduct.keys || dbProduct.keys.length === 0) {
+        throw new Error(`Product "${product.name}" is out of stock.`);
+      }
 
-      const assignedKey = dbProduct.keys.shift(); // remove first key
+      const assignedKey = dbProduct.keys.shift(); // Remove first key
+
       deliveredData.push({
         name: product.name,
         type: product.productType,
@@ -526,52 +527,51 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 
     // 👤 Account logic
     else if (product.productType === "account") {
-  if (dbProduct.accountType === "private") {
-    const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
+      if (dbProduct.accountType === "private") {
+        const availableAccount = dbProduct.accounts.find((acc) => !acc.used);
 
-    if (!availableAccount) {
-      throw new Error(`No available private accounts for "${product.name}".`);
+        if (!availableAccount) {
+          throw new Error(`No available private accounts for "${product.name}".`);
+        }
+
+        availableAccount.used = true;
+
+        deliveredData.push({
+          name: product.name,
+          type: "account",
+          value: {
+            email: availableAccount.details.email,
+            password: availableAccount.details.password,
+            code: availableAccount.details.code || null,
+            loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
+          },
+        });
+
+      } else if (dbProduct.accountType === "shared") {
+        if (!dbProduct.sharedAccount) {
+          throw new Error(`No shared account configured for "${product.name}".`);
+        }
+
+        if (dbProduct.sharedAccount.soldCount >= dbProduct.sharedAccount.quantity) {
+          throw new Error(`Shared account for "${product.name}" is sold out.`);
+        }
+
+        dbProduct.sharedAccount.soldCount += 1;
+
+        deliveredData.push({
+          name: product.name,
+          type: "account",
+          value: {
+            email: dbProduct.sharedAccount.details.email,
+            password: dbProduct.sharedAccount.details.password,
+            code: dbProduct.sharedAccount.details.code || null,
+            loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
+          },
+        });
+      }
+
+      await dbProduct.save();
     }
-
-    availableAccount.used = true;
-
-    deliveredData.push({
-      name: product.name,
-      type: "account",
-      value: {
-        email: availableAccount.email,
-        password: availableAccount.password,
-        code: availableAccount.code || null,
-        loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
-      },
-    });
-
-  } else if (dbProduct.accountType === "shared") {
-    if (!dbProduct.sharedAccount) {
-      throw new Error(`No shared account configured for "${product.name}".`);
-    }
-
-    if (dbProduct.sharedAccount.soldCount >= dbProduct.sharedAccount.quantity) {
-      throw new Error(`Shared account for "${product.name}" is sold out.`);
-    }
-
-    dbProduct.sharedAccount.soldCount += 1;
-
-    deliveredData.push({
-      name: product.name,
-      type: "account",
-      value: {
-        email: dbProduct.sharedAccount.email,
-        password: dbProduct.sharedAccount.password,
-        code: dbProduct.sharedAccount.code || null,
-        loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
-      },
-    });
-  }
-
-  await dbProduct.save();
-  }
-
   }
 
   order.deliveredKeys = deliveredData;
@@ -582,7 +582,7 @@ export const verifyOrder = asyncHandler(async (req, res) => {
   await sendEmail({
     to: order.user.email,
     subject: "✅ Your Order is Completed",
-    text: `Your order #${order._id} has been verified. Please check your dashboard or live chat for access details.`,
+    text: `Your order #${order._id} has been verified. Please check your dashboard for access details.`,
   });
 
   res.status(200).json({
