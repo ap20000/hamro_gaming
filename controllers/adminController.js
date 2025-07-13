@@ -593,7 +593,8 @@ export const verifyOrder = asyncHandler(async (req, res) => {
 });
 
 export const getAllOrdersWithProducts = asyncHandler(async (req, res) => {
-  const orders = await Order.find()
+ const orders = await Order.find()
+    .sort({ createdAt: -1 })
     .populate("user", "name email")
     .populate("products"); // Includes GamingProduct details
 
