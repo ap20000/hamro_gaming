@@ -108,7 +108,9 @@ export const placeOrder = asyncHandler(async (req, res) => {
 });
 
 export const getMyOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ user: req.user._id }).populate(
+  const orders = await Order.find({ user: req.user._id })
+    .sort({ createdAt: -1 })
+    .populate(
     "products",
     "name productType price image"
   );
