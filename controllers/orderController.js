@@ -154,14 +154,7 @@ export const claimGiftcardKey = asyncHandler(async (req, res) => {
     throw new Error("Order not verified yet.");
   }
 
-  if (order.isClaimed) {
-    return res.status(200).json({
-      success: true,
-      message: "Key already claimed",
-    });
-  }
 
-  order.isClaimed = true;
   await order.save();
 
   res.status(200).json({
