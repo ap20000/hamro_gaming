@@ -540,9 +540,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
           name: product.name,
           type: "account",
           value: {
-            email: availableAccount.email,
-            password: availableAccount.password,
-            code: availableAccount.code || null,
+            email: availableAccount.details.email,
+            password: availableAccount.details.password,
+            code: availableAccount.details.code || null,
             loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
           },
         });
@@ -563,9 +563,9 @@ export const verifyOrder = asyncHandler(async (req, res) => {
           name: product.name,
           type: "account",
           value: {
-            email: dbProduct.sharedAccount.email,
-            password: dbProduct.sharedAccount.password,
-            code: dbProduct.sharedAccount.code || null,
+            email: dbProduct.sharedAccount.details.email,
+            password: dbProduct.sharedAccount.details.password,
+            code: dbProduct.sharedAccount.details.code || null,
             loginInstructions: dbProduct.loginInstructions || "Login with the provided credentials."
           },
         });
