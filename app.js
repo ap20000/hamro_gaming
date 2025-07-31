@@ -114,6 +114,7 @@ const allowedOrigins = [
   "https://hamro-gaming-frontend.vercel.app",
    'https://frontend-1qzh.vercel.app',
    "https://hamrogamingstore.com"
+  ]
 
 // app.use(
 //   cors({
