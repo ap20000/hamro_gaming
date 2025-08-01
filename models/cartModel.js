@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const SelectedOptionSchema = new mongoose.Schema(
   {
     label: { type: String, required: true },
-    amount: { type: Number },
+    amount: { type: String },
     price: { type: Number, required: true },
   },
   { _id: false }
