@@ -1,5 +1,3 @@
-import jwt from "jsonwebtoken";
-
 const generateToken = (res, userId, role) => {
   const isProduction = process.env.NODE_ENV === "production";
 
@@ -9,26 +7,26 @@ const generateToken = (res, userId, role) => {
   console.log("isProduction:", isProduction);
 
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: "15m", // JWT itself expires in 15 minutes
   });
 
   console.log("Generated JWT:", token);
+
+  const expiryMs = 15 * 60 * 1000; // 15 minutes in milliseconds
 
   res.cookie("jwt", token, {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: expiryMs,
   });
 
   res.cookie("role", role, {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: expiryMs,
   });
 
-  console.log("✅ Cookies sent with response");
+  console.log("✅ Cookies sent with response (15 min expiry)");
 };
-
-export default generateToken;
