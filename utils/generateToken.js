@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 const generateToken = (res, userId, role) => {
   const isProduction = process.env.NODE_ENV === "production";
 
@@ -30,3 +31,4 @@ const generateToken = (res, userId, role) => {
 
   console.log("✅ Cookies sent with response (15 min expiry)");
 };
+export default generateToken;
