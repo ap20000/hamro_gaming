@@ -1,5 +1,6 @@
 import asyncHandler from "../middlewares/asyncHandler.js";
 import Order from "../models/orderModel.js";
+import Cart from "../models/cartModel.js";
 
 import sendEmail from "../services/emailService.js";
 
