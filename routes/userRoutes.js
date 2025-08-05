@@ -8,6 +8,7 @@ import {
   addToCart,
   getCart,
   removeFromCart,
+  clearCartAfterPayment,
 } from "../controllers/cartController.js";
 import {
   placeOrder,
@@ -30,6 +31,7 @@ router.get("/products/:id", getGamingProductById);
 router.post("/cart", protect, addToCart);
 router.get("/cart", protect, getCart);
 router.delete("/cart/:productId/:label", protect, removeFromCart);
+router.post('/clear', protect, clearCartAfterPayment);
 
 // Order Routes
 router.post("/orders", protect, placeOrder);
