@@ -43,6 +43,13 @@ export const placeOrder = asyncHandler(async (req, res) => {
     status: isGiftcardOrCDKey ? "awaiting_verification" : "pending",
   });
 
+  const cart = await Cart.findOne({ user: req.user._id });
+  if (cart) {
+    cart.products = [];
+    await cart.save();
+    console.log("🧹 User cart cleared after placing order.");
+  }
+
   // Send admin email
   if (isGiftcardOrCDKey || isAccount) {
     await sendEmail({
