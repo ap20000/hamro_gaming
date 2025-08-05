@@ -197,3 +197,34 @@ export const removeFromCart = asyncHandler(async (req, res) => {
   console.log('🗑️ [removeFromCart] Finished');
   console.log('============================');
 });
+
+// ✅ Clear Cart After Payment
+export const clearCartAfterPayment = asyncHandler(async (req, res) => {
+  console.log('============================');
+  console.log('💳 [clearCartAfterPayment] Called');
+  console.log('✅ req.user:', req.user);
+
+  const userId = req.user?._id;
+  if (!userId) {
+    console.error('❌ [clearCartAfterPayment] User not authenticated');
+    res.status(401);
+    throw new Error('Not authenticated');
+  }
+
+  const cart = await Cart.findOne({ user: userId });
+
+  if (!cart) {
+    console.log('ℹ️ [clearCartAfterPayment] Cart not found, nothing to clear.');
+    return res.status(200).json({ success: true, message: "Cart already empty." });
+  }
+
+  cart.products = [];
+  await cart.save();
+
+  console.log('✅ [clearCartAfterPayment] Cart cleared for user:', userId);
+  res.status(200).json({ success: true, message: "Cart cleared after payment." });
+
+  console.log('💳 [clearCartAfterPayment] Finished');
+  console.log('============================');
+});
+
