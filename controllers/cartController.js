@@ -1,6 +1,6 @@
 import asyncHandler from '../middlewares/asyncHandler.js';
 import Cart from '../models/cartModel.js';
-
+import Product from '../models/productModel.js';
 /**
  * Utility to remove unwanted fields (like _id) from selectedOption
  */
@@ -97,6 +97,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     console.log('✅ [addToCart] Cart updated:', cart._id);
   }
 
+  const populatedCart = await Cart.findById(cart._id).populate('products.product');
   res.status(200).json({ success: true, cart });
   console.log('🛒 [addToCart] Finished');
   console.log('============================');
