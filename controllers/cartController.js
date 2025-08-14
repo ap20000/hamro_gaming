@@ -105,43 +105,35 @@ export const addToCart = asyncHandler(async (req, res) => {
 
 // ✅ Get Cart (populate product details)
 export const getCart = asyncHandler(async (req, res) => {
-  console.log('============================');
-  console.log('🛒 [getCart] Called');
-  console.log('✅ req.user:', req.user);
-
   const userId = req.user?._id;
   if (!userId) {
-    console.error('❌ [getCart] User not authenticated');
     res.status(401);
     throw new Error('Not authenticated. Please login again.');
   }
 
-  console.log('ℹ️ [getCart] Looking for cart for user:', userId);
   const cart = await Cart.findOne({ user: userId }).populate('products.product');
 
   if (!cart) {
-    console.log('ℹ️ [getCart] No cart found. Returning empty.');
     return res.status(200).json({ success: true, cart: { products: [] } });
   }
 
-  console.log('✅ [getCart] Cart found:', cart._id);
-  console.log('ℹ️ [getCart] Product count:', cart.products.length);
+  // Filter out any cart items where product is null
+  const safeProducts = cart.products
+    .filter(item => item.product != null)
+    .map(item => ({
+      product: item.product,
+      selectedOption: item.selectedOption,
+      quantity: item.quantity,
+    }));
 
   res.status(200).json({
     success: true,
     cart: {
       _id: cart._id,
       user: cart.user,
-      products: cart.products.map(item => ({
-        product: item.product,
-        selectedOption: item.selectedOption,
-        quantity: item.quantity,
-      })),
+      products: safeProducts,
     },
   });
-
-  console.log('🛒 [getCart] Finished');
-  console.log('============================');
 });
 
 // ✅ Remove from Cart
