@@ -115,7 +115,8 @@ const allowedOrigins = [
    'https://frontend-1qzh.vercel.app',
    "https://hamrogamingstore.com",
     "https://www.hamrogamingstore.com",
-    "https://hamro-gaming-frontend-ap20000s-projects.vercel.app"
+    "https://hamro-gaming-frontend-ap20000s-projects.vercel.app",
+    "https://hamro-gaming-frontend-ten.vercel.app"
   ]
 
 // app.use(
